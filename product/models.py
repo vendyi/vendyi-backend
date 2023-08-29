@@ -7,7 +7,7 @@ from django.utils.text import slugify
 class Category(models.Model):
     title = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
-    image = models.ImageField(upload_to='category/', null=True, blank=True)
+    image = models.ImageField(upload_to='media/category/', null=True, blank=True)
     
     class Meta:
         verbose_name_plural = 'Categories'
@@ -38,7 +38,7 @@ class Product(models.Model):
     ]
     title = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    main_image = models.ImageField(upload_to='products/')
+    main_image = models.ImageField(upload_to='media/products/')
     additional_images = models.JSONField(null=True, blank=True)  # If using PostgreSQL
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
