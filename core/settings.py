@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     "payment",
     "product",
     "vendors",
+    'rest_framework',
+    'rest_framework.authtoken',
+    'channels',
 ]
 
 MIDDLEWARE = [
