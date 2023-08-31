@@ -13,4 +13,9 @@ urlpatterns = [
     path('product/set-discount/', SetDiscountView.as_view(), name='set_discount'),#Allows venders to set discounts on products or a whole category of products. Only accepts post method, user must be authenticated/and must be a vendor
     
     path('product/terminate-discount/', TerminateDiscountView.as_view(), name='terminate_discount'),#Allows venders to set discounts on products or a whole category of products. Only accepts post method, user must be authenticated/and must be a vendor
+    
+    path('product/<int:product_id>/like/', ProductLikeView.as_view(), name='product-like'),#User like products
+    
+    path('product/<int:product_id>/unlike/', ProductDislikeView.as_view(), name='product-unlike'),#User unlike product
+    
 ]

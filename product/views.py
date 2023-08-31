@@ -5,7 +5,7 @@ from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsVendor
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
-from rest_framework.views import APIView
+from rest_framework.generics import get_object_or_404
 
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductListSerializer
@@ -132,3 +132,29 @@ class TerminateDiscountView(generics.CreateAPIView):
         product.save()
 
         return Response({"message": "Discount terminated successfully"}, status=status.HTTP_200_OK)
+
+class ProductLikeView(generics.CreateAPIView):
+    queryset = Product.objects.all()
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        product = self.get_product_object()
+        product.increment_likes()  # Increment the likes count
+        return Response({"total_likes": product.likes}, status=status.HTTP_200_OK)
+    
+    def get_product_object(self):
+        product_id = self.kwargs.get('product_id')
+        return get_object_or_404(Product, pk=product_id)
+    
+class ProductDislikeView(generics.CreateAPIView):
+    queryset = Product.objects.all()
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        product = self.get_product_object()
+        product.decrement_likes()  # Increment the likes count
+        return Response({"total_likes": product.likes}, status=status.HTTP_200_OK)
+    
+    def get_product_object(self):
+        product_id = self.kwargs.get('product_id')
+        return get_object_or_404(Product, pk=product_id)

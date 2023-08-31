@@ -1,5 +1,5 @@
 from vendors.models import Vendor
-# Create your models here.
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils.text import slugify
 
@@ -46,6 +46,30 @@ class Product(models.Model):
     discount_end_date = models.DateField(blank=True, null=True)
     colors = models.ManyToManyField(ColorOption, blank=True)
     sizes = models.ManyToManyField(SizeOption, blank=True)
+    likes = models.DecimalField(default=0, max_digits=10, decimal_places=2)
+
+    def increment_likes(self):
+        self.likes += 1
+        self.save()
+
+    def decrement_likes(self):
+        if self.likes > 0:
+            self.likes -= 1
+            self.save()
     
     def __str__(self):
         return self.title
+
+
+
+class ProductComment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class CommentReply(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(ProductComment, on_delete=models.CASCADE)
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
