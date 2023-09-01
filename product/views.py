@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from .models import Product, Category
+from .models import *
+from account.models import *
 from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsVendor
@@ -39,21 +40,33 @@ class ProductsByCategoryView(generics.ListAPIView):
             return Response({"message": "No Products in the category"})
         else:
             return super().list(request, *args, **kwargs)
-        
+       
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductDetailSerializer
     lookup_field = 'id'
-    def get_queryset(self):
-        queryset = Product.objects.all()
-        return queryset
     
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        if not queryset.exists():
-            return Response({"message": "This product does not exist"}, status=404)
-        else:
-            return self.retrieve(request, *args, **kwargs)
-
+        product_id = kwargs['id']
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            return Response({"message": "This product does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Add recently viewed item to the user's profile if authenticated
+        if request.user.is_authenticated:
+            recently_viewed_item, created = RecentlyViewed.objects.get_or_create(
+                user=request.user,
+                product=product
+            )
+            try:
+                request.user.userprofile.recently_viewed.add(recently_viewed_item)
+            except:
+                user_profile = UserProfile.objects.create(user=request.user)
+                request.user.userprofile.recently_viewed.add(recently_viewed_item)
+        
+        serializer = self.get_serializer(product)
+        return Response(serializer.data)
+    
 class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
 
@@ -158,3 +171,53 @@ class ProductDislikeView(generics.CreateAPIView):
     def get_product_object(self):
         product_id = self.kwargs.get('product_id')
         return get_object_or_404(Product, pk=product_id)
+   
+class RecentlyViewedListView(generics.ListAPIView):
+    serializer_class = RecentlyViewedSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            return RecentlyViewed.objects.filter(user=self.request.user)
+        else:
+            return RecentlyViewed.objects.none() 
+
+class ProductCommentCreateView(generics.CreateAPIView):
+    serializer_class = ProductCommentSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        product_id = request.data.get('product')
+        text = request.data.get('text')
+        
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            return Response({"message": "Product does not exist", "produvt":product_id}, status=status.HTTP_404_NOT_FOUND)
+        vendor = product.vendor
+        vendor_user = vendor.user
+        if request.user.is_vendor and request.user == vendor_user:
+            is_vendor_comment = True # Check if user is the vendor of the product
+        else:
+            is_vendor_comment = False
+        comment = ProductComment.objects.create(user=request.user, product=product, text=text, is_vendor_comment=is_vendor_comment)
+        serializer = ProductCommentSerializer(comment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class CommentReplyCreateView(generics.CreateAPIView):
+    serializer_class = CommentReplySerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        comment_id = request.data.get('comment_id')
+        text = request.data.get('text')
+        
+        try:
+            comment = ProductComment.objects.get(pk=comment_id)
+        except ProductComment.DoesNotExist:
+            return Response({"message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        is_vendor_comment = request.user == comment.product.vendor
+        reply = CommentReply.objects.create(user=request.user, comment=comment, text=text, is_vendor_comment=is_vendor_comment)
+        serializer = CommentReplySerializer(reply)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

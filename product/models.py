@@ -60,16 +60,20 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-
-
 class ProductComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    is_vendor_comment = models.BooleanField(default=False) 
+    
+    def __str__(self):
+        return self.text
+    # Vendor-specific comment
 
 class CommentReply(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     comment = models.ForeignKey(ProductComment, on_delete=models.CASCADE)
     text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    is_vendor_comment = models.BooleanField(default=False)  # Vendor-specific comment

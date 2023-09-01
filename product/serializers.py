@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Product, Category, ColorOption, SizeOption
-
+from .models import *
+from account.models import RecentlyViewed
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -22,8 +22,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
-
-        
+       
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -39,3 +38,22 @@ class DiscountSerializer(serializers.Serializer):
 class TerminateDiscountSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
 
+class RecentlyViewedSerializer(serializers.Serializer):
+    product = serializers.StringRelatedField()
+    class Meta:
+        model = RecentlyViewed
+        fields = '__all__'
+
+class CommentReplySerializer(serializers.ModelSerializer):
+    comment = serializers.StringRelatedField()
+    class Meta:
+        model = CommentReply
+        fields = '__all__'
+
+class ProductCommentSerializer(serializers.ModelSerializer):
+    replies = CommentReplySerializer(many=True, read_only=True)
+    product = serializers.StringRelatedField()
+    user = serializers.StringRelatedField()
+    class Meta:
+        model = ProductComment
+        fields = '__all__'

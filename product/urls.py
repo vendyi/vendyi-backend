@@ -18,4 +18,9 @@ urlpatterns = [
     
     path('product/<int:product_id>/unlike/', ProductDislikeView.as_view(), name='product-unlike'),#User unlike product
     
+    path('user/recently-viewed/', RecentlyViewedListView.as_view(), name='recently-viewed'),#User recently viewed items
+    
+    path('product/comments/create/', ProductCommentCreateView.as_view(), name='create-comment'),
+    
+    path('product/comments/reply/create/', CommentReplyCreateView.as_view(), name='create-reply'),
 ]
