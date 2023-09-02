@@ -21,7 +21,7 @@ class ProductListView(generics.ListAPIView):
             return Response({"message": "No Products"})
         else:
             return self.list(request, *args, **kwargs)
-        
+
 class ProductsByCategoryView(generics.ListAPIView):
     serializer_class = ProductCategorySerializer
 
@@ -40,7 +40,7 @@ class ProductsByCategoryView(generics.ListAPIView):
             return Response({"message": "No Products in the category"})
         else:
             return super().list(request, *args, **kwargs)
-       
+
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductDetailSerializer
     lookup_field = 'id'
@@ -66,7 +66,7 @@ class ProductDetailView(generics.RetrieveAPIView):
         
         serializer = self.get_serializer(product)
         return Response(serializer.data)
-    
+
 class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
 
@@ -80,7 +80,7 @@ class CategoryListView(generics.ListAPIView):
             return Response({"message": "No Products"})
         else:
             return self.list(request, *args, **kwargs)
-        
+
 class SetDiscountView(generics.CreateAPIView):
     serializer_class = DiscountSerializer
     permission_classes = [IsAuthenticated, IsVendor]
@@ -121,7 +121,7 @@ class SetDiscountView(generics.CreateAPIView):
                 return Response({"message": "Category Does not Exist"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "Discount applied successfully"}, status=status.HTTP_201_CREATED)
-    
+
 class TerminateDiscountView(generics.CreateAPIView):
     serializer_class = TerminateDiscountSerializer
     permission_classes = [IsAuthenticated, IsVendor]
@@ -158,7 +158,7 @@ class ProductLikeView(generics.CreateAPIView):
     def get_product_object(self):
         product_id = self.kwargs.get('product_id')
         return get_object_or_404(Product, pk=product_id)
-    
+
 class ProductDislikeView(generics.CreateAPIView):
     queryset = Product.objects.all()
     permission_classes = [IsAuthenticated]
@@ -171,7 +171,7 @@ class ProductDislikeView(generics.CreateAPIView):
     def get_product_object(self):
         product_id = self.kwargs.get('product_id')
         return get_object_or_404(Product, pk=product_id)
-   
+
 class RecentlyViewedListView(generics.ListAPIView):
     serializer_class = RecentlyViewedSerializer
     permission_classes = [IsAuthenticated]
@@ -227,7 +227,7 @@ class CommentReplyCreateView(generics.CreateAPIView):
         reply = CommentReply.objects.create(user=request.user, comment=comment, text=text, is_vendor_comment=is_vendor_comment)
         serializer = CommentReplySerializer(reply)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
 class ProductCommentListView(generics.ListAPIView):
     serializer_class = ProductCommentListSerializer
     
@@ -263,7 +263,7 @@ class CommentReplyListView(generics.ListAPIView):
             return Response({"message": "No Replies"}, status=400)
         else:
             return self.list(request, *args, **kwargs)
-        
+
 class WishlistDetailView(generics.RetrieveAPIView):
     
     serializer_class = WishlistSerializer
@@ -300,7 +300,7 @@ class WishlistCreateView(generics.CreateAPIView):
         wishlist.save()
         serializer = self.get_serializer(wishlist)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
 class WishlistRemoveView(generics.CreateAPIView):
     queryset = Wishlist.objects.all()
     serializer_class = WishlistSerializer
