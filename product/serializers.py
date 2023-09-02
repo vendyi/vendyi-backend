@@ -45,15 +45,13 @@ class RecentlyViewedSerializer(serializers.Serializer):
         fields = '__all__'
 
 class CommentReplySerializer(serializers.ModelSerializer):
-    comment = serializers.StringRelatedField()
     class Meta:
         model = CommentReply
         fields = '__all__'
 
 class ProductCommentSerializer(serializers.ModelSerializer):
     replies = CommentReplySerializer(many=True, read_only=True)
-    product = serializers.StringRelatedField()
-    user = serializers.StringRelatedField()
+    
     class Meta:
         model = ProductComment
         fields = '__all__'

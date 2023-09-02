@@ -210,14 +210,20 @@ class CommentReplyCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     def create(self, request, *args, **kwargs):
-        comment_id = request.data.get('comment_id')
+        comment_id = request.data.get('comment')
         text = request.data.get('text')
-        
+        user = request.data.get('user')
         try:
             comment = ProductComment.objects.get(pk=comment_id)
+            user = User.objects.get(pk=user)
         except ProductComment.DoesNotExist:
             return Response({"message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        is_vendor_comment = request.user == comment.product.vendor
+        vendor = comment.product.vendor
+        vendor_user = vendor.user
+        if user.is_vendor and user == vendor_user:
+            is_vendor_comment = True # Check if user is the vendor of the product
+        else:
+            is_vendor_comment = False
         reply = CommentReply.objects.create(user=request.user, comment=comment, text=text, is_vendor_comment=is_vendor_comment)
         serializer = CommentReplySerializer(reply)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
