@@ -76,4 +76,13 @@ class CommentReply(models.Model):
     comment = models.ForeignKey(ProductComment, on_delete=models.CASCADE)
     text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    is_vendor_comment = models.BooleanField(default=False)  # Vendor-specific comment
+    is_vendor_comment = models.BooleanField(default=False)
+    def __str__(self):
+        return self.text
+
+class Wishlist(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    products = models.ManyToManyField(Product, related_name='wishlists')
+
+    def __str__(self):
+        return f"Wishlist for {self.user.username}"

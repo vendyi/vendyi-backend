@@ -20,7 +20,17 @@ urlpatterns = [
     
     path('user/recently-viewed/', RecentlyViewedListView.as_view(), name='recently-viewed'),#User recently viewed items
     
-    path('product/comments/create/', ProductCommentCreateView.as_view(), name='create-comment'),
+    path('product/comments/create/', ProductCommentCreateView.as_view(), name='create-comment'),#User create comments
     
-    path('product/comments/reply/create/', CommentReplyCreateView.as_view(), name='create-reply'),
+    path('product/comments/list/<int:id>/', ProductCommentListView.as_view(), name='list-comment'),#List comments under a product, <int:id> is the product id
+    
+    path('product/comments/reply/create/', CommentReplyCreateView.as_view(), name='create-reply'),#User create comment reply
+    
+    path('product/comments/reply/list/<int:id>/', CommentReplyListView.as_view(), name='list-reply'),#List all comment replies under a comment, <in:id> is the comment id
+    
+    path('product/wishlist/<str:username>/', WishlistDetailView.as_view(), name='wishlist-detail'),#List products in wishlist for user
+    
+    path('product/wishlists/create/', WishlistCreateView.as_view(), name='wishlist-create'),#Create wishlist for user
+    
+    path('product/wishlists/remove/', WishlistRemoveView.as_view(), name='wishlist-remove'),#Create wishlist for user
 ]

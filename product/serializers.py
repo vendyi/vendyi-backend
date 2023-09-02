@@ -55,3 +55,23 @@ class ProductCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductComment
         fields = '__all__'
+
+class ProductCommentListSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+    product = serializers.StringRelatedField()
+    class Meta:
+        model = ProductComment
+        fields = "__all__"
+        
+class CommentReplyListSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+    class Meta:
+        model = ProductComment
+        fields = ['id', 'user', 'text', 'is_vendor_comment']
+
+class WishlistSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Wishlist
+        fields = '__all__'
+        

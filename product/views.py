@@ -212,7 +212,7 @@ class CommentReplyCreateView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         comment_id = request.data.get('comment')
         text = request.data.get('text')
-        user = request.data.get('user')
+    
         try:
             comment = ProductComment.objects.get(pk=comment_id)
             user = User.objects.get(pk=user)
@@ -220,10 +220,99 @@ class CommentReplyCreateView(generics.CreateAPIView):
             return Response({"message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
         vendor = comment.product.vendor
         vendor_user = vendor.user
-        if user.is_vendor and user == vendor_user:
+        if request.user.is_vendor and request.user == vendor_user:
             is_vendor_comment = True # Check if user is the vendor of the product
         else:
             is_vendor_comment = False
         reply = CommentReply.objects.create(user=request.user, comment=comment, text=text, is_vendor_comment=is_vendor_comment)
         serializer = CommentReplySerializer(reply)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class ProductCommentListView(generics.ListAPIView):
+    serializer_class = ProductCommentListSerializer
+    
+    def get_queryset(self):
+        product_id = self.kwargs['id']
+        try:# Assuming you pass the product_id in the URL
+            queryset = ProductComment.objects.filter(product_id=product_id)
+            return queryset
+        except:
+            return ProductComment.objects.none()
+    
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No Comments"}, status=400)
+        else:
+            return self.list(request, *args, **kwargs)
+
+class CommentReplyListView(generics.ListAPIView):
+    serializer_class = CommentReplyListSerializer
+    
+    def get_queryset(self):
+        product_id = self.kwargs['id']
+        try:# Assuming you pass the product_id in the URL
+            queryset = CommentReply.objects.filter(comment_id=product_id)
+            return queryset
+        except:
+            return ProductComment.objects.none()
+    
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No Replies"}, status=400)
+        else:
+            return self.list(request, *args, **kwargs)
+        
+class WishlistDetailView(generics.RetrieveAPIView):
+    
+    serializer_class = WishlistSerializer
+    lookup_field = 'username'
+    
+    def get(self, request, *args, **kwargs):
+        username = kwargs['username']
+        
+        try:
+            user = User.objects.get(username=username)
+    
+        except User.DoesNotExist:
+            return Response({"message": "Incorrect username"}, status=400)
+
+        try:
+            wishlist = Wishlist.objects.get(user=user)
+        except Wishlist.DoesNotExist:
+            return Response({"message": "User has no wishlist"}, status=404)
+
+        serializer = self.get_serializer(wishlist)
+        return Response(serializer.data)
+
+class WishlistCreateView(generics.CreateAPIView):
+    queryset = Wishlist.objects.all()
+    serializer_class = WishlistSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        wishlist, created = Wishlist.objects.get_or_create(user=user)
+        product_ids = request.data.get('products')
+        wishlist.products.add(*product_ids)
+        wishlist.save()
+        serializer = self.get_serializer(wishlist)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class WishlistRemoveView(generics.CreateAPIView):
+    queryset = Wishlist.objects.all()
+    serializer_class = WishlistSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        wishlist, created = Wishlist.objects.get_or_create(user=user)
+        product_ids = request.data.get('products')
+        wishlist.products.remove(*product_ids)
+        wishlist.save()
+        serializer = self.get_serializer(wishlist)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
