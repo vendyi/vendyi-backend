@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from product.models import Product
+from cart.models import Cart
 """ 
 Modify these and make them work with the user model u may create 
 These codes just handle recently viewed items with a basic user profile doe users.
@@ -18,7 +19,7 @@ class RecentlyViewed(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     recently_viewed = models.ManyToManyField(RecentlyViewed, blank=True)
-    
+    cart = models.OneToOneField(Cart, on_delete=models.CASCADE, blank=True, null=True)
     def __str__(self):
         return self.user.username
     
