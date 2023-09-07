@@ -8,7 +8,7 @@ from product.models import Product
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from .serializers import CartItemSerializer
-from decimal import Decimal  # Import Decimal
+from decimal import Decimal
 
 class AddToCartView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
