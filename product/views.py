@@ -323,6 +323,11 @@ class WishlistCreateView(generics.CreateAPIView):
         user = request.user
         wishlist, created = Wishlist.objects.get_or_create(user=user)
         product_ids = request.data.get('products')
+        for id in product_ids:
+            try:
+                product = Product.objects.get(pk=id)
+            except Product.DoesNotExist:
+                return Response({"message":"Product Does not exist"}, status=404)
         wishlist.products.add(*product_ids)
         wishlist.save()
         serializer = self.get_serializer(wishlist)
