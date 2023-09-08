@@ -27,17 +27,14 @@ class ProductsByCategoryView(generics.ListAPIView):
 
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
-        try:
-            category = Category.objects.get(slug=category_slug)
-            queryset = Product.objects.filter(category=category)
-            return queryset
-        except Category.DoesNotExist:
-            return Product.objects.none()  # Return an empty queryset
+        category = get_object_or_404(Category, slug=category_slug)
+        queryset = Product.objects.filter(category=category)
+        return queryset
         
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        if len(queryset) == 0:
-            return Response({"message": "No Products in the category"})
+        if not queryset.exists():
+            return Response({"message": "No Products in the category"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return super().list(request, *args, **kwargs)
 
@@ -126,23 +123,54 @@ class TerminateDiscountView(generics.CreateAPIView):
     serializer_class = TerminateDiscountSerializer
     permission_classes = [IsAuthenticated, IsVendor]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        product_id = serializer.validated_data['product_id']
+        product_id = serializer.validated_data.get('product_id')
+        category_id = serializer.validated_data.get('category_id')
 
-        try:
-            product = Product.objects.get(pk=product_id)
-        except Product.DoesNotExist:
-            return Response({"message": "Product Does not Exist"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Terminate the discount for the specified product
-        product.price = (product.price /(1- product.discount_percentage / 100))
-        product.discount_percentage = 0
-        product.discount_start_date = None
-        product.discount_end_date = None
-        product.save()
+        if product_id and category_id:
+            return Response({"message": "You must select only one option"}, status=status.HTTP_400_BAD_REQUEST)
+        elif product_id:
+            try:
+                product = Product.objects.get(pk=product_id)
+                # Terminate the discount for the specified product
+                if product.discount_percentage > 0:
+                    product.price = (product.price /(1- product.discount_percentage / 100))
+                    product.discount_percentage = 0
+                    product.discount_start_date = None
+                    product.discount_end_date = None
+                    product.save()
+                else:
+                    return Response({"message": "Product has no discount"}, status=status.HTTP_200_OK)
+            except Product.DoesNotExist:
+                return Response({"message": "Product Does not Exist"}, status=status.HTTP_400_BAD_REQUEST)
+        elif category_id:
+            try:
+                category = Category.objects.get(pk=category_id)
+                products_in_category = Product.objects.filter(category=category)
+                exemption_message = []  # To collect exempted product messages
+                for product in products_in_category:
+                    if product.discount_percentage > 0:
+                        product.price = (product.price /(1- product.discount_percentage / 100))
+                        product.discount_percentage = 0
+                        product.discount_start_date = None
+                        product.discount_end_date = None
+                        product.save()
+                    else:
+                        exemption_message.append(f'Product with Id-{product.pk} has no active discounts')
+
+                if exemption_message:
+                    if len(products_in_category) == len(exemption_message):
+                        return Response({"message": "All products have no active discounts"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response({"message": "Discount terminated successfully for some products",
+                                         "exemption_message": exemption_message}, status=status.HTTP_200_OK)
+            except Category.DoesNotExist:
+                return Response({"message": "Category Does not Exist"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "Discount terminated successfully"}, status=status.HTTP_200_OK)
 
@@ -194,7 +222,7 @@ class ProductCommentCreateView(generics.CreateAPIView):
         try:
             product = Product.objects.get(pk=product_id)
         except Product.DoesNotExist:
-            return Response({"message": "Product does not exist", "produvt":product_id}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Product does not exist", "product":product_id}, status=status.HTTP_404_NOT_FOUND)
         vendor = product.vendor
         vendor_user = vendor.user
         if request.user.is_vendor and request.user == vendor_user:
@@ -215,7 +243,6 @@ class CommentReplyCreateView(generics.CreateAPIView):
     
         try:
             comment = ProductComment.objects.get(pk=comment_id)
-            user = User.objects.get(pk=user)
         except ProductComment.DoesNotExist:
             return Response({"message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
         vendor = comment.product.vendor

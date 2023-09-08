@@ -36,7 +36,8 @@ class DiscountSerializer(serializers.Serializer):
     discount_end_date = serializers.DateField(required=False)
     
 class TerminateDiscountSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField()
+    product_id = serializers.IntegerField(required=False)
+    category_id = serializers.IntegerField(required=False)
 
 class RecentlyViewedSerializer(serializers.Serializer):
     product = serializers.StringRelatedField()
