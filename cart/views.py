@@ -60,7 +60,7 @@ class RemoveFromCartView(generics.DestroyAPIView):
         except Cart.DoesNotExist:
             return Response({"message": "User does not have a cart"}, status=status.HTTP_400_BAD_REQUEST)
         except CartItem.DoesNotExist:
-            return Response({"message": "Item not found in the cart"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Item not found in the cart"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class CartView(APIView):
