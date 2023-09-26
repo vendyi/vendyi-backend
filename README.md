@@ -5,6 +5,9 @@ Our Backend Repository
 - Remember to add a `requirements.txt` file to make it easy to access all dependencies.
 - We will use one base settings.
 
+# To Do List For Products
+- In doing the Create view for the product model, user must be checked if vendor.
+
 # For Front-End Devs
 - To run this code on your local machine.
 - Create a virtual environment, use `python -m venv venv` on windows.

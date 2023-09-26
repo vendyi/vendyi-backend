@@ -1,7 +1,7 @@
-from vendors.models import Vendor
-from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.text import slugify
+from vendors.models import Vendor
 
 class ColorOption(models.Model):
     color = models.CharField(max_length=50)
@@ -30,6 +30,15 @@ class Category(models.Model):
 
     def __str__(self):
         return self.title
+
+class ShopCategory(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    product_categories = models.ManyToManyField(Category, related_name='shop_categories')
+
+    class Meta:
+        verbose_name = 'ShopCategory'
+        verbose_name_plural = 'ShopCategories'
 
 class Product(models.Model):
     title = models.CharField(max_length=100)
@@ -60,6 +69,17 @@ class Product(models.Model):
     
     def __str__(self):
         return self.title
+
+
+class RecentlyViewed(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'product']
+    def __str__(self):
+        return f'{self.user.username} just viewed {self.product}'
 
 class ProductComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
