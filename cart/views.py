@@ -25,6 +25,8 @@ class AddToCartView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         product_id = request.data.get('product')
         quantity = request.data.get('quantity')
+        color = request.data.get('color')
+        size = request.data.get('size')
         product = get_object_or_404(Product, pk=product_id)
         user = self.request.user
 
@@ -33,11 +35,26 @@ class AddToCartView(generics.CreateAPIView):
 
         # Check if the product is already in the cart
         cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
-
-        # If the item already exists in the cart, increase the quantity
         if not item_created:
             cart_item.quantity += int(quantity)
+            if size is not None:
+                cart_item.size = size
+
+            if color is not None:
+                cart_item.color = color
             cart_item.save()
+            
+        if size is not None:
+            cart_item.size = size
+
+        if color is not None:
+            cart_item.color = color
+
+        cart_item.save()
+        
+        
+        # If the item already exists in the cart, increase the quantity
+        
         return Response({"message": "Item added to cart"}, status=status.HTTP_200_OK)
  
 class RemoveFromCartView(generics.DestroyAPIView):

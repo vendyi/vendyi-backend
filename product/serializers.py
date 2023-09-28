@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from account.models import RecentlyViewed
+from product.models import RecentlyViewed
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product

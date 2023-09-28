@@ -1,16 +1,15 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import validate_image_file_extension, RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
 """ 
 Modify these and make them work with the user model u may create 
 These codes just handle recently viewed items with a basic user profile doe users.
 """
 
 class MyAccountManager(BaseUserManager):
-    def create_user(self, first_name, last_name, username, email, password=None):
+    def create_user(self, first_name, last_name, username, email, password=None, **extra_fields):
         if not email:
             raise ValueError('User must have an email address')
         
@@ -18,18 +17,28 @@ class MyAccountManager(BaseUserManager):
             raise ValueError('User must have a username')
         
         user = self.model(
-            email = self.normalize_email(email),
-            username = username,
-            first_name = first_name,
-            last_name = last_name,
+            email=self.normalize_email(email),
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            **extra_fields,
         )
 
         user.set_password(password)
         user.save(using=self._db)
         return user
+    
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        return self.create_user(email=email, password=password, **extra_fields)
 
 
-class User(AbstractBaseUser):
+
+
+class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     username = models.CharField(max_length=50, unique=True)
