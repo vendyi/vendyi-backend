@@ -41,7 +41,7 @@ class Product(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     date_added = models.DateTimeField(auto_now_add=True)
     in_stock = models.BooleanField(default=True)
-    amount_stock = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    amount_in_stock = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     discount_percentage = models.DecimalField(default=0,max_digits=5, decimal_places=2, blank=True, null=True)
     discount_start_date = models.DateField(blank=True, null=True)
     discount_end_date = models.DateField(blank=True, null=True)
