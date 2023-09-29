@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from .permissions import IsVendor
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.generics import get_object_or_404
-
+from django.db.models import Count
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductListSerializer
 
@@ -68,7 +68,8 @@ class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
 
     def get_queryset(self):
-        queryset = Category.objects.all()
+        categories = Category.objects.annotate(num_products=Count('product'))
+        queryset = categories.filter(num_products__gt=0)
         return queryset
 
     def get(self, request, *args, **kwargs):
