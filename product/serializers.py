@@ -2,9 +2,13 @@ from rest_framework import serializers
 from .models import *
 from product.models import RecentlyViewed
 class ProductListSerializer(serializers.ModelSerializer):
+    category = serializers.StringRelatedField()
+    vendor = serializers.StringRelatedField()
+    colors = serializers.StringRelatedField(many=True, required=False)
+    sizes = serializers.StringRelatedField(many=True, required=False)
     class Meta:
         model = Product
-        fields = ['id', 'title', 'price', 'main_image']
+        fields = "__all__"
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
@@ -16,9 +20,8 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
     vendor = serializers.StringRelatedField()
-    colors = serializers.StringRelatedField(many=True)
-    sizes = serializers.StringRelatedField(many=True)
-
+    colors = serializers.StringRelatedField(many=True, required=False)
+    sizes = serializers.StringRelatedField(many=True, required=False)
     class Meta:
         model = Product
         fields = '__all__'
