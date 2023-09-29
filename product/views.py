@@ -348,4 +348,27 @@ class WishlistRemoveView(generics.CreateAPIView):
         wishlist.save()
         serializer = self.get_serializer(wishlist)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+class SearchView(generics.CreateAPIView):
+    serializer_class = SearchSerializer
+
+    def get_queryset(self):
+        
+        keyword = self.request.data.get('keyword')
+        if keyword[0] == "@":
+            queryset = Product.objects.filter(vendor__shop_name__icontains=keyword[1:])
+        else:
+            queryset = Product.objects.filter(title__icontains=keyword)
+        return queryset
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        keyword = serializer.validated_data.get('keyword')
+        queryset = self.get_queryset()
+        serialized_data = ProductListSerializer(queryset, many=True).data
+        if not queryset.exists():
+            return Response({"message": "No Products"})
+        else:
+            return Response(serialized_data)

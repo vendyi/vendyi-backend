@@ -13,9 +13,11 @@ class ProductListSerializer(serializers.ModelSerializer):
 class ProductCategorySerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
     vendor = serializers.StringRelatedField()
+    colors = serializers.StringRelatedField(many=True, required=False)
+    sizes = serializers.StringRelatedField(many=True, required=False)
     class Meta:
         model = Product
-        fields = ['id', 'title', 'price', 'main_image', 'category','vendor']
+        fields = "__all__"
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
@@ -79,3 +81,5 @@ class WishlistSerializer(serializers.ModelSerializer):
         model = Wishlist
         fields = '__all__'
         
+class SearchSerializer(serializers.Serializer):
+    keyword = serializers.CharField(required=False)

@@ -33,4 +33,6 @@ urlpatterns = [
     path('product/wishlists/create/', WishlistCreateView.as_view(), name='wishlist-create'),#Create wishlist for user
     
     path('product/wishlists/remove/', WishlistRemoveView.as_view(), name='wishlist-remove'),#Create wishlist for user
+    
+    path('search/', SearchView.as_view(), name='search'),#Search For Products and Vendors
 ]
