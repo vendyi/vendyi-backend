@@ -12,10 +12,10 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductCategorySerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
-
+    vendor = serializers.StringRelatedField()
     class Meta:
         model = Product
-        fields = ['id', 'title', 'price', 'main_image', 'category']
+        fields = ['id', 'title', 'price', 'main_image', 'category','vendor']
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
