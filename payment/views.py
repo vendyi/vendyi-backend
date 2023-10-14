@@ -44,6 +44,12 @@ class SavedPaymentListView(generics.ListAPIView):
     def get_queryset(self):
         # Filter the queryset to retrieve the saved payments of the authenticated user
         return SavedPayment.objects.filter(user=self.request.user)
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "User has no saved Payments"}, status=404)
+        else:
+            return self.list(request, *args, **kwargs)
 
 class SavedPaymentDeleteView(generics.DestroyAPIView):
     serializer_class = SavedPaymentSerializer
