@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from .models import *
-from account.models import *
+from accounts.models import *
 from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsVendor

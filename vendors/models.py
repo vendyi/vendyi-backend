@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import URLValidator, validate_image_file_extension
-from account.models import User
+from accounts.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 

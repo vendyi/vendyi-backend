@@ -9,7 +9,7 @@ These codes just handle recently viewed items with a basic user profile doe user
 """
 
 class MyAccountManager(BaseUserManager):
-    def create_user(self, first_name, last_name, username, email, password=None):
+    def create_user(self, username, email, phone_number, password=None):
         if not email:
             raise ValueError('User must have an email address')
         
@@ -19,21 +19,19 @@ class MyAccountManager(BaseUserManager):
         user = self.model(
             email = self.normalize_email(email),
             username = username,
-            first_name = first_name,
-            last_name = last_name,
+            phone_number = phone_number,
         )
 
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, first_name, last_name, email, username, password):
+    def create_superuser(self, email, username, phone_number, password):
         user = self.create_user(
             email = self.normalize_email(email),
             username = username,
             password = password,
-            first_name = first_name,
-            last_name = last_name,
+            phone_number = phone_number,
         )
         user.is_admin = True
         user.is_active = True
@@ -46,17 +44,17 @@ class MyAccountManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-
+    code = models.CharField(max_length=50, blank=True, null=True)
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
         message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
     )
 
-    phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True) 
+    phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, unique=True) 
     
     #required
     date_joined = models.DateTimeField(auto_now_add= True)
@@ -66,8 +64,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=False)
     is_superadmin = models.BooleanField(default=False)
     
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email','phone_number']
 
     objects = MyAccountManager()
 
