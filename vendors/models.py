@@ -4,23 +4,21 @@ from accounts.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-class ActiveVendorManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_active=True)
+
 
 class Vendor(models.Model):
     '''Model definition for Vendor.'''
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    shop_name = models.CharField(max_length=255)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="is_vendor")
+    shop_name = models.CharField(max_length=255, unique=True)
     description = models.TextField(max_length=500)
     location = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=50)
-    website = models.URLField(validators=[URLValidator()])
+    website = models.URLField(validators=[URLValidator()], blank=True, null=True)
     ID_card = models.ImageField(upload_to='media/vendors/ID_cards', null=True, blank=True, validators=[validate_image_file_extension])
     is_active = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add= True)
 
-    active_vendors = ActiveVendorManager()  # custom manager
+      # custom manager
 
     class Meta:
         '''Meta definition for Vendor.'''
