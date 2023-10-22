@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from product.models import Product
 from product.serializers import *
 from .serializers import *
+from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
 from rest_framework.permissions import IsAuthenticated
 from product.permissions import IsVendor
@@ -65,3 +66,53 @@ class CreateProductView(generics.CreateAPIView):
         vendor = Vendor.objects.get(user=self.request.user)
         serializer.validated_data['vendor'] = vendor
         serializer.save()
+
+class ListVendorProducts(generics.ListAPIView):
+    
+    serializer_class = ProductListSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Filter products by the vendor
+        return Product.objects.filter(vendor=vendor)
+    
+    def list(self, request, *args, **kwargs):
+        
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No Products by this vendor"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return super().list(request, *args, **kwargs)
+        
+class UpdateProductView(generics.UpdateAPIView):
+    serializer_class = ProductCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Get the product by its ID
+        try:
+            product = Product.objects.get(pk=self.kwargs['pk'])
+        except:
+            return Response({"message":"Product des not exist"}, status=400)
+        # Check if the product's vendor matches the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        if product.vendor == vendor:
+            return product
+        else:
+            # Raise a permission denied exception or return an error response
+            raise PermissionDenied("You do not have permission to edit this product.")
+
+class DeleteProductView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        product = self.get_object()
+        # Check if the product's vendor matches the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        if product.vendor == vendor:
+            product.delete()
+            return Response({"message": "Product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            raise PermissionDenied("You do not have permission to delete this product.")
