@@ -17,3 +17,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
         read_only_fields = ["vendor"]
+        
+class PromoCodeSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=255)
+    discount_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+    discount_start_date = serializers.DateField(required=False)
+    discount_end_date = serializers.DateField(required=False)

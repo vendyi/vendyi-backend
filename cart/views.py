@@ -7,7 +7,7 @@ from .models import *
 from product.models import Product
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
-from .serializers import CartItemSerializer
+from .serializers import CartItemSerializer, PromoCodeApplySerializer
 from decimal import Decimal
 
 class AddToCartView(generics.CreateAPIView):
@@ -79,7 +79,6 @@ class RemoveFromCartView(generics.DestroyAPIView):
         except CartItem.DoesNotExist:
             return Response({"message": "Item not found in the cart"}, status=status.HTTP_404_NOT_FOUND)
 
-
 class CartView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
@@ -99,3 +98,25 @@ class CartView(APIView):
             return Response({"cart_data": cart_data, "total_price": total_price}, status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
             return Response({"message": "User does not have a cart"}, status=status.HTTP_400_BAD_REQUEST)
+
+class ApplyPromoCodeView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = PromoCodeApplySerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        promo_code = serializer.validated_data['promo_code']
+        cart = Cart.objects.get(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+        total_price = Decimal(0)
+        for item in cart_items:
+            if item.product.vendor == promo_code.vendor and promo_code.is_active:  # Check if the product belongs to the vendor, the promo code is valid, and the promo code is active
+                total_price += item.product.price * item.quantity * (1 - promo_code.discount_percentage / 100)
+            elif promo_code.is_active != True:
+                return Response({"message": "Promo code is not active"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                total_price += item.product.price * item.quantity
+        response_data = {"promo_code": promo_code.code, "total_price": total_price}
+        return Response(response_data, status=status.HTTP_200_OK)

@@ -94,7 +94,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='photos/users', default='profile.jpeg', validators=[validate_image_file_extension])
-    
+    is_online = models.BooleanField(default=False)
+    last_active = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return self.user.username
     

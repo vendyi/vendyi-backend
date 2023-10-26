@@ -43,3 +43,13 @@ def create_vendor_profile(sender, instance, created, **kwargs):
     if created and not hasattr(instance, 'VendorProfile'):
         VendorProfile.objects.create(vendor=instance)
     
+class Promo_Code(models.Model):
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    code = models.CharField(max_length=255, unique=True)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    discount_start_date = models.DateField(blank=True, null=True)
+    discount_end_date = models.DateField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)  
+    date_created = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.code

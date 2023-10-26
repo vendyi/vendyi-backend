@@ -8,6 +8,14 @@ from decimal import Decimal
 from rest_framework.permissions import IsAuthenticated
 from product.permissions import IsVendor
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
+import string
+import secrets
+
+def generate_promo_code(length=8):
+    """Generate a random promo code of the specified length."""
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
 class CreateVendor(generics.CreateAPIView):
     serializer_class = VendorSerializer
     authentication_classes = [TokenAuthentication,SessionAuthentication]
@@ -31,7 +39,7 @@ class CreateProductView(generics.CreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductCreateSerializer
     permission_classes = [IsAuthenticated, IsVendor]
-
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     def calculate_profit(self, price):
         # Define the standard profit margin (e.g., 5%)
         standard_margin_factor = Decimal('0.05')  # 5%
@@ -68,7 +76,7 @@ class CreateProductView(generics.CreateAPIView):
         serializer.save()
 
 class ListVendorProducts(generics.ListAPIView):
-    
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     serializer_class = ProductListSerializer
     permission_classes = [IsAuthenticated, IsVendor]
     
@@ -89,6 +97,7 @@ class ListVendorProducts(generics.ListAPIView):
 class UpdateProductView(generics.UpdateAPIView):
     serializer_class = ProductCreateSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
 
     def get_object(self):
         # Get the product by its ID
@@ -116,3 +125,40 @@ class DeleteProductView(generics.DestroyAPIView):
             return Response({"message": "Product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         else:
             raise PermissionDenied("You do not have permission to delete this product.")
+        
+class CreatePromoCode(generics.CreateAPIView):
+    serializer_class = PromoCodeSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    
+    def create(self, request, *args, **kwargs):
+        vendor = Vendor.objects.get(user=self.request.user)  # Get the authenticated vendor
+        code = request.data.get('code')  # Get the promo code from the request data
+        if code:
+            pass
+        else:
+            code = generate_promo_code()  # Generate a unique promo code
+        discount_percentage = request.data.get('discount_percentage')  # Get the discount percentage from the request data
+        discount_start_date = request.data.get('discount_start_date')  # Get the discount start date from the request data
+        discount_end_date = request.data.get('discount_end_date')   # Get the discount end date from the request data
+        if discount_end_date and discount_start_date:
+            promo_code = Promo_Code.objects.create(vendor=vendor, code=code, discount_percentage=discount_percentage, discount_start_date=discount_start_date, discount_end_date=discount_end_date)  # Create a new Promo_Code object with the provided data
+        else:
+            promo_code = Promo_Code.objects.create(vendor=vendor, code=code, discount_percentage=discount_percentage)
+        return Response({"message": "Promo code created successfully", "promo_code_id": promo_code.id, "promo_code":promo_code.code}, status=status.HTTP_201_CREATED)
+    
+class TerminatePromoCode(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    queryset = Promo_Code.objects.all()
+    serializer_class = PromoCodeSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        vendor = Vendor.objects.get(user=self.request.user)
+        if instance.vendor != vendor:
+            raise PermissionDenied("You do not have permission to terminate this promo code.")
+        instance.is_active = False
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data,{"message": "Promo code terminated successfully"}, status=status.HTTP_200_OK)
