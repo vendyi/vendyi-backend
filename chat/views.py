@@ -24,7 +24,17 @@ class ChatMessagesCreateView(generics.CreateAPIView):
         else:
             room_name = f"chat_{other_user_id}_{user.id}"
         chat_room, created = ChatRoom.objects.get_or_create(room_name=room_name, sender=user, receiver=receiver)
-        serializer.save(sender=self.request.user, chat_room=chat_room)
+        # Check if the other user is online
+        if self.is_user_online(other_user_id):
+            delivered = True
+        else:
+            # If the user is offline, send a push notification
+            #device_token = self.get_device_token(other_user_id)  # You need to implement this method
+            #result = self.send_push_notification(device_token, "New message", "You have a new message")
+            #delivered = result['success'] > 0  # Check if the push notification was sent successfully
+            pass
+
+        serializer.save(sender=self.request.user, chat_room=chat_room, delivered=delivered)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -47,14 +57,7 @@ class ChatMessagesCreateView(generics.CreateAPIView):
                     'message': serializer.data,
                 }
         )
-        if self.is_user_online(other_user_id):
-            pass
-        else:
-            # If the user is offline, send a push notification
-            #device_token = self.get_device_token(other_user_id)  # You need to implement this method
-            #self.send_push_notification(device_token, "New message", "You have a new message")
-            return Response({"message":"user is offline"})
-
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -88,6 +91,12 @@ class ChatMessagesView(generics.ListAPIView):
         chat_room = self.kwargs['chat_room']
         chat_room = ChatRoom.objects.get(room_name=chat_room)
         messages = Message.objects.filter(chat_room=chat_room)
+        for message in messages:
+            if message.receiver == user:
+                message.read = True
+                message.save()
+            else:
+                pass
         return messages.order_by('timestamp')
 
     def get(self, request, *args, **kwargs):
