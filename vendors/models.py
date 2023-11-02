@@ -26,13 +26,13 @@ class Vendor(models.Model):
         verbose_name_plural = 'Vendors'
 
     def __str__(self):
-        return self.user.username
+        return self.shop_name
     
 class VendorProfile(models.Model):
     vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='media/vendors/profiles', default='media/profile.jpeg', validators=[validate_image_file_extension])
     header_image = models.ImageField(upload_to='media/vendors/headers', validators=[validate_image_file_extension])
-    followers = models.ManyToManyField(User, related_name='following', default='media/profile.jpeg',)
+    followers = models.ManyToManyField(User, related_name='following', blank=True,)
 
     def __str__(self):
         return self.vendor.shop_name

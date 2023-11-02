@@ -161,4 +161,73 @@ class TerminatePromoCode(generics.UpdateAPIView):
         instance.is_active = False
         instance.save()
         serializer = self.get_serializer(instance)
-        return Response(serializer.data,{"message": "Promo code terminated successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "Promo code terminated successfully"}, status=status.HTTP_200_OK)
+
+class ListVendorPromoCodes(generics.ListAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = PromocodeListSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Filter promo codes by the vendor
+        return Promo_Code.objects.filter(vendor=vendor)
+    
+    def list(self, request, *args, **kwargs):
+        
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No Promo Codes by this vendor"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return super().list(request, *args, **kwargs)
+        
+class VendorDetailView(generics.RetrieveAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = VendorProfileSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    def get_object(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Get the vendor's profile
+        vendor_profile = VendorProfile.objects.get(vendor=vendor)
+        return vendor_profile
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"data":serializer.data,"message": "Vendor details fetched successfully"}, status=status.HTTP_200_OK)
+
+class VendorProfileUpdateView(generics.UpdateAPIView):
+    serializer_class = VendorProfileUpdateSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def get_object(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Get the vendor's profile
+        vendor_profile = VendorProfile.objects.get(vendor=vendor)
+        return vendor_profile
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Vendor profile updated successfully"}, status=status.HTTP_200_OK)
+    
+class VendorAddFollowersView(generics.CreateAPIView):
+    serializer_class = VendorProfileUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def get_object(self):
+        # Get the authenticated user's vendor
+        user = pk=self.kwargs['pk']
+        vendor = Vendor.objects.get(user=user)
+        # Get the vendor's profile
+        vendor_profile = VendorProfile.objects.get(vendor=vendor)
+        return vendor_profile
+    def create(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = User.objects.get(pk=request.user.id)
+        instance.followers.add(user)
+        instance.save()
+        return Response({"message": "User added successfully"}, status=status.HTTP_200_OK)

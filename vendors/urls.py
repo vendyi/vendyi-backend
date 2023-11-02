@@ -10,4 +10,8 @@ urlpatterns = [
     path('product/update/<int:pk>/', UpdateProductView.as_view(), name='update-product'),
     path('product/delete/<int:pk>/', DeleteProductView.as_view(), name='delete-product'),
     path('promo-codes/<int:pk>/terminate/', TerminatePromoCode.as_view(), name='terminate_promo_code'),
+    path('promo-codes/list/', ListVendorPromoCodes.as_view(), name='list_promo_codes'),
+    path("", VendorDetailView.as_view(), name="vendor-detail"),
+    path("update-profile/", VendorProfileUpdateView.as_view(), name="update-profile"),
+    path("add-follower/<int:pk>/", VendorAddFollowersView.as_view(), name="add-follower"),
 ]

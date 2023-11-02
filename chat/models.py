@@ -1,8 +1,8 @@
 from django.db import models
 
 class ChatRoom(models.Model):
-    sender = models.ForeignKey('accounts.User', related_name='sender', on_delete=models.CASCADE)
-    receiver = models.ForeignKey('accounts.User', related_name='receiver', on_delete=models.CASCADE)
+    sender = models.ForeignKey('accounts.User', related_name='sender', on_delete=models.CASCADE, blank=True, null=True)
+    receiver = models.ForeignKey('accounts.User', related_name='receiver', on_delete=models.CASCADE, blank=True, null=True)
     room_name = models.CharField(max_length=250)
     
     def __str__(self):

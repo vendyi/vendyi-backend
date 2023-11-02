@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from .models import *
 from accounts.models import *
 from .serializers import *
+from vendors.serializers import VendorSerializer
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsVendor
+from vendors.models import Vendor
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.generics import get_object_or_404
 from django.db.models import Count
@@ -55,11 +57,7 @@ class ProductDetailView(generics.RetrieveAPIView):
                 user=request.user,
                 product=product
             )
-            try:
-                request.user.userprofile.recently_viewed.add(recently_viewed_item)
-            except:
-                user_profile = UserProfile.objects.create(user=request.user)
-                request.user.userprofile.recently_viewed.add(recently_viewed_item)
+            
         
         serializer = self.get_serializer(product)
         return Response(serializer.data)
@@ -356,7 +354,8 @@ class SearchView(generics.CreateAPIView):
         
         keyword = self.request.data.get('keyword')
         if keyword[0] == "@":
-            queryset = Product.objects.filter(vendor__shop_name__icontains=keyword[1:])
+            queryset = Vendor.objects.filter(shop_name__icontains=keyword[1:])
+           
         else:
             queryset = Product.objects.filter(title__icontains=keyword)
         return queryset
@@ -367,8 +366,13 @@ class SearchView(generics.CreateAPIView):
 
         keyword = serializer.validated_data.get('keyword')
         queryset = self.get_queryset()
-        serialized_data = ProductListSerializer(queryset, many=True).data
-        if not queryset.exists():
-            return Response({"message": "No Products"})
-        else:
+        if queryset.exists():
+            if keyword[0] == "@":
+                serialized_data = VendorSerializer(queryset, many=True).data
+            else:
+                serialized_data = ProductListSerializer(queryset, many=True).data
             return Response(serialized_data)
+        
+        else:
+            return Response({"message": "No Products"}, status=404)
+        

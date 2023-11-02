@@ -23,10 +23,15 @@ class ChatMessagesCreateView(generics.CreateAPIView):
             room_name = f"chat_{user.id}_{other_user_id}"
         else:
             room_name = f"chat_{other_user_id}_{user.id}"
-        chat_room, created = ChatRoom.objects.get_or_create(room_name=room_name, sender=user, receiver=receiver)
+        chat_room, created = ChatRoom.objects.get_or_create(room_name=room_name)
+        if created:
+            chat_room.sender = user
+            chat_room.receiver = receiver
+            chat_room.save()
+        
         # Check if the other user is online
         if self.is_user_online(other_user_id):
-            delivered = True
+            pass
         else:
             # If the user is offline, send a push notification
             #device_token = self.get_device_token(other_user_id)  # You need to implement this method
@@ -34,7 +39,7 @@ class ChatMessagesCreateView(generics.CreateAPIView):
             #delivered = result['success'] > 0  # Check if the push notification was sent successfully
             pass
 
-        serializer.save(sender=self.request.user, chat_room=chat_room, delivered=delivered)
+        serializer.save(sender=self.request.user, chat_room=chat_room,)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -48,7 +53,7 @@ class ChatMessagesCreateView(generics.CreateAPIView):
         else:
             room_name = f"chat_{other_user_id}_{user.id}"
         channel_layer = get_channel_layer()
-        chat_room, created = ChatRoom.objects.get_or_create(room_name=room_name, sender=user, receiver=receiver)
+        
         # Check if the other user is online
         async_to_sync(channel_layer.group_send)(
                 room_name,
@@ -57,7 +62,16 @@ class ChatMessagesCreateView(generics.CreateAPIView):
                     'message': serializer.data,
                 }
         )
-        
+        message_id = serializer.data['id']
+        if self.is_user_online(other_user_id):
+            Message.objects.filter(id=message_id).update(delivered=True)
+            self.send_delivered_notification(message_id, room_name)
+        else:
+            # If the user is offline, send a push notification
+            #device_token = self.get_device_token(other_user_id)  # You need to implement this method
+            #result = self.send_push_notification(device_token, "New message", "You have a new message")
+            #delivered = result['success'] > 0  # Check if the push notification was sent successfully
+            pass
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -77,6 +91,15 @@ class ChatMessagesCreateView(generics.CreateAPIView):
         )
         return result
 
+    def send_delivered_notification(self, message_id, room_name):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            room_name,
+            {
+                'type': 'message.delivered',
+                'message_id': message_id,
+            }
+        )
     def get_device_token(self, user_id):
         # You need to implement this method to get the device token for a user.
         pass
@@ -89,16 +112,29 @@ class ChatMessagesView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         chat_room = self.kwargs['chat_room']
-        chat_room = ChatRoom.objects.get(room_name=chat_room)
-        messages = Message.objects.filter(chat_room=chat_room)
+        try:
+            chat_room = ChatRoom.objects.get(room_name=chat_room)
+            messages = Message.objects.filter(chat_room=chat_room)
+        except ChatRoom.DoesNotExist:
+            return Message.objects.none()
         for message in messages:
-            if message.receiver == user:
+            if message.receiver == user and not message.read:
                 message.read = True
                 message.save()
+                self.send_read_notification(message.id, chat_room.room_name)
             else:
                 pass
         return messages.order_by('timestamp')
-
+    
+    def send_read_notification(self, message_id, room_name):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            room_name,
+            {
+                'type': 'message.read',
+                'message_id': message_id,
+            }
+        )
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
         

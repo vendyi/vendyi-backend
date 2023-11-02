@@ -8,6 +8,12 @@ class VendorSerializer(serializers.ModelSerializer):
         read_only_fields = ['is_active']
 
 class VendorProfileSerializer(serializers.ModelSerializer):
+    vendor = VendorSerializer()
+    class Meta:
+        model = VendorProfile
+        fields = '__all__'
+
+class VendorProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
         fields = '__all__'
@@ -23,3 +29,9 @@ class PromoCodeSerializer(serializers.Serializer):
     discount_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
     discount_start_date = serializers.DateField(required=False)
     discount_end_date = serializers.DateField(required=False)
+
+class PromocodeListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promo_Code
+        fields = '__all__'
+        read_only_fields = ['vendor']
