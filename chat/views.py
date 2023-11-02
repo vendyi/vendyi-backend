@@ -9,11 +9,13 @@ from pyfcm import FCMNotification
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from django.db.models import Prefetch
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class ChatMessagesCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
-    serializer_class = MessageSerializer
+    serializer_class = MessageCreateSerializer
+    parser_classes = [MultiPartParser, FormParser]  # Add this line
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -28,18 +30,16 @@ class ChatMessagesCreateView(generics.CreateAPIView):
             chat_room.sender = user
             chat_room.receiver = receiver
             chat_room.save()
-        
-        # Check if the other user is online
-        if self.is_user_online(other_user_id):
-            pass
-        else:
-            # If the user is offline, send a push notification
-            #device_token = self.get_device_token(other_user_id)  # You need to implement this method
-            #result = self.send_push_notification(device_token, "New message", "You have a new message")
-            #delivered = result['success'] > 0  # Check if the push notification was sent successfully
-            pass
 
-        serializer.save(sender=self.request.user, chat_room=chat_room,)
+        reply_to_id = self.request.data.get('reply_to')  # Get the id of the message to reply to
+        reply_to = None
+        if reply_to_id is not None:
+            reply_to = Message.objects.get(id=reply_to_id)  # Get the message to reply to
+
+        serializer.save(sender=self.request.user, chat_room=chat_room, reply_to=reply_to)
+
+    # ... existing methods ...
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

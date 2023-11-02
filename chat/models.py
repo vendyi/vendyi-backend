@@ -11,10 +11,12 @@ class ChatRoom(models.Model):
 class Message(models.Model):
     chat_room = models.ForeignKey(ChatRoom, related_name='messages', on_delete=models.CASCADE)
     sender = models.ForeignKey('accounts.User', related_name='sent_messages', on_delete=models.CASCADE)
-    content = models.TextField()
+    content = models.TextField(blank=True, null=True)
     receiver = models.ForeignKey('accounts.User', related_name='received_messages', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
     delivered = models.BooleanField(default=False)
+    file = models.FileField(upload_to='messages/', blank=True, null=True)  # Add this line
+    reply_to = models.ForeignKey('self', related_name='replies', on_delete=models.SET_NULL, blank=True, null=True)
     def __str__(self):
-        return self.content
+        return self.content if self.content else f'File: {self.file.name}'
