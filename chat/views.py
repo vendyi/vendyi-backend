@@ -38,9 +38,6 @@ class ChatMessagesCreateView(generics.CreateAPIView):
 
         serializer.save(sender=self.request.user, chat_room=chat_room, reply_to=reply_to)
 
-    # ... existing methods ...
-
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
