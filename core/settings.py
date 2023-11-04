@@ -115,6 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CSRF_TRUSTED_ORIGINS = ['https://vendyi-92322aa588dc.herokuapp.com']
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -128,7 +129,7 @@ USE_I18N = True
 USE_TZ = True
 
 AWS_ACCESS_KEY_ID = 'DO00ULTH6YPYDV3MND6K'
-AWS_SECRET_ACCESS_KEY = 'K4vQWhrZX1d2D2bKqf0CnZRRQrZatGNj70LMIgi1hBw'
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = 'achlive'
 AWS_S3_CUSTOM_DOMAIN = 'https://achlive.ams3.digitaloceanspaces.com'
 AWS_DEFAULT_ACL = 'public-read'
