@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from .models import *
 import requests
-
+import os
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
@@ -28,18 +28,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create(**validated_data)
         user.set_password(user.password)
         user.save()
+        message = f"Hello {user.username}, Welcome to Vendyi."
         data = {
         'expiry': 5,
         'length': 6,
         'medium': 'sms',
-        'message': 'This is OTP from Vendyi, %otp_code%',
+        'message': message+' This is ypur verification code. %otp_code%\nPlease do not share with anyone.',
         'number': user.phone_number,
         'sender_id': 'Vendyi',
         'type': 'numeric',
         }
 
         headers = {
-        'api-key': 'ZHNRdG1MbGVNallQV0FnZVBSTWg'
+        'api-key': os.environ.get('ARK_API_KEY'),
         }
 
         url = 'https://sms.arkesel.com/api/otp/generate'
