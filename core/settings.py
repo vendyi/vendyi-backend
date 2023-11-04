@@ -128,12 +128,12 @@ USE_I18N = True
 
 USE_TZ = True
 
-AWS_ACCESS_KEY_ID = 'DO00ULTH6YPYDV3MND6K'
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = 'achlive'
-AWS_S3_CUSTOM_DOMAIN = 'https://achlive.ams3.digitaloceanspaces.com'
-AWS_DEFAULT_ACL = 'public-read'
-AWS_QUERYSTRING_AUTH = False
+DO_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
+DO_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+DO_STORAGE_BUCKET_NAME = 'achlive'
+DO_S3_CUSTOM_DOMAIN = 'https://achlive.ams3.digitaloceanspaces.com'
+DO_DEFAULT_ACL = 'public-read'
+DO_QUERYSTRING_AUTH = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -144,7 +144,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR/'static'
 ]
-MEDIA_URL = "https://%s/" % AWS_S3_CUSTOM_DOMAIN
+MEDIA_URL = "https://%s/" % DO_S3_CUSTOM_DOMAIN
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 MEDIA_ROOT = BASE_DIR/'media/'
