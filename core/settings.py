@@ -128,28 +128,38 @@ USE_I18N = True
 
 USE_TZ = True
 
-AWS_ACCESS_KEY_ID=os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY=os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME=os.environ.get("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_ENDPOINT_URL="https://ams3.digitaloceanspaces.com"
+# Assuming you have set these environment variables correctly
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+
+# If you are using DigitalOcean Spaces, this endpoint URL is needed
+AWS_S3_ENDPOINT_URL = "https://ams3.digitaloceanspaces.com"
+
+# This is for cache settings, it looks fine
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
 }
-AWS_LOCATION = f"https://{AWS_STORAGE_BUCKET_NAME}.ams3.digitaloceanspaces.com"
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = 'static_root'
-# Add these lines for WhiteNoise
+# This should be just the path prefix within the bucket, not the full URL
+AWS_LOCATION = 'media'
+
+# Your static files configuration
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
+
+# WhiteNoise settings look fine, assuming you have 'whitenoise' installed
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
-    BASE_DIR/'static'
+    os.path.join(BASE_DIR, 'static')
 ]
-MEDIA_URL = '/media/'
+
+# For media files with S3 storage
+MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.ams3.digitaloceanspaces.com/{AWS_LOCATION}/"
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-MEDIA_ROOT = BASE_DIR/'media/'
+# MEDIA_ROOT is not typically used when DEFAULT_FILE_STORAGE is set to S3, but it is still required for certain Django functions
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
