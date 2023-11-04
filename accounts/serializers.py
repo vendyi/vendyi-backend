@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import *
 import requests
 import os
+from rest_framework.response import Response
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
@@ -50,7 +51,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if response.status_code == 200:
             print(response.json())
         else:
-            print(f"Error: {response.status_code} and {response.json()}")
+            return Response(f"Error: {response.status_code} and {response.json()}")
         
         return user
 
