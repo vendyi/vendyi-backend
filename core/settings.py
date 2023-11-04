@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'chat',
     'allauth.account',
     'dj_rest_auth',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -126,7 +127,12 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+AWS_ACCESS_KEY_ID = 'DO00ULTH6YPYDV3MND6K'
+AWS_SECRET_ACCESS_KEY = 'K4vQWhrZX1d2D2bKqf0CnZRRQrZatGNj70LMIgi1hBw'
+AWS_STORAGE_BUCKET_NAME = 'achlive'
+AWS_S3_CUSTOM_DOMAIN = 'https://achlive.ams3.digitaloceanspaces.com'
+AWS_DEFAULT_ACL = 'public-read'
+AWS_QUERYSTRING_AUTH = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -137,7 +143,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR/'static'
 ]
-MEDIA_URL = '/media/'
+MEDIA_URL = "https://%s/" % AWS_S3_CUSTOM_DOMAIN
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
 MEDIA_ROOT = BASE_DIR/'media/'
 
 # Default primary key field type
@@ -157,3 +165,4 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'core.routing.application'
+
