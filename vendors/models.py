@@ -3,7 +3,7 @@ from django.core.validators import URLValidator, validate_image_file_extension
 from accounts.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.utils import timezone
 
 
 class Vendor(models.Model):
@@ -53,3 +53,39 @@ class Promo_Code(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.code
+
+class Wallet(models.Model):
+    vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE, related_name='wallet')
+    total_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    available_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    pending_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"Wallet for {self.vendor.id} - Total: {self.total_balance}, Available: {self.available_balance}"
+
+class Transaction(models.Model):
+    CREDIT = 'credit'
+    DEBIT = 'debit'
+    TRANSACTION_TYPE_CHOICES = [
+        (CREDIT, 'Credit'),
+        (DEBIT, 'Debit'),
+    ]
+
+    PENDING = 'pending'
+    AVAILABLE = 'available'
+    COMPLETED = 'completed'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (AVAILABLE, 'Available'),
+        (COMPLETED, 'Completed'),
+    ]
+
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='transactions')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=6, choices=TRANSACTION_TYPE_CHOICES)
+    status = models.CharField(max_length=9, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(default=timezone.now)
+    cleared_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Transaction {self.id} - {self.transaction_type} - {self.status}"

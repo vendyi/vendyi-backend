@@ -22,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'password', 'email', 'first_name', 'phone_number')
+        fields = ('username', 'password', 'email', 'phone_number')
         extra_kwargs = {'password': {'write_only': True}}
     
     def create(self, validated_data):
@@ -34,7 +34,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         'expiry': 5,
         'length': 6,
         'medium': 'sms',
-        'message': message+' This is ypur verification code. %otp_code%\nPlease do not share with anyone.',
+        'message': message+' This is your verification code:\n%otp_code%\nPlease do not share this code with anyone.',
         'number': user.phone_number,
         'sender_id': 'Vendyi',
         'type': 'numeric',
@@ -64,7 +64,7 @@ class FullUserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id','first_name', 'last_name', 'email', 'phone_number', 'profile']
+        fields = ['id','first_name', 'last_name', 'email', 'phone_number', 'profile', 'username']
 
 class UserOtpVerificationSerializer(serializers.Serializer):
     code = serializers.CharField()
