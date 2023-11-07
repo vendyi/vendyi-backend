@@ -11,7 +11,10 @@ urlpatterns = [
     path('product/delete/<int:pk>/', DeleteProductView.as_view(), name='delete-product'),
     path('promo-codes/<int:pk>/terminate/', TerminatePromoCode.as_view(), name='terminate_promo_code'),
     path('promo-codes/list/', ListVendorPromoCodes.as_view(), name='list_promo_codes'),
-    path("", VendorDetailView.as_view(), name="vendor-detail"),
+    path("<int:pk>/", VendorDetailView.as_view(), name="vendor-detail"),
     path("update-profile/", VendorProfileUpdateView.as_view(), name="update-profile"),
     path("add-follower/<int:pk>/", VendorAddFollowersView.as_view(), name="add-follower"),
+    path("remove-follower/<int:pk>/", VendorRemoveFollowersView.as_view(), name="remove-follower"),
+    path("followers/<int:pk>/", VendorFollowersView.as_view(), name="followers"),
+    path("verify-pin/", VerifyVendorPinView.as_view(), name="verify-pin"),
 ]

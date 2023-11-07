@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from product.models import Product
 from product.serializers import *
 from .serializers import *
+from accounts.models import User, UserProfile
+from accounts.serializers import *
 from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +12,7 @@ from product.permissions import IsVendor
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 import string
 import secrets
+
 
 def generate_promo_code(length=8):
     """Generate a random promo code of the specified length."""
@@ -40,37 +43,39 @@ class CreateProductView(generics.CreateAPIView):
     serializer_class = ProductCreateSerializer
     permission_classes = [IsAuthenticated, IsVendor]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
+    
     def calculate_profit(self, price):
-        # Define the standard profit margin (e.g., 5%)
-        standard_margin_factor = Decimal('0.05')  # 5%
-        # Define the profit margin for prices above $500 but below $10,000 (e.g., 2.5%)
-        high_margin_factor = Decimal('0.025')  # 2.5%
-        # Define the profit margin for prices at or above $10,000 (e.g., 1.5%)
-        highest_margin_factor = Decimal('0.015')  # 1.5%
-        # Define the price threshold for applying the high margin (e.g., $500)
-        high_price_threshold = Decimal('500')
-        # Define the price threshold for applying the highest margin (e.g., $10,000)
-        highest_price_threshold = Decimal('10000')
+        # Convert string to Decimal if it's not already
+        price = Decimal(str(price))
+        
+        # Define price ranges and their corresponding additional fees
+        price_ranges = [
+            (Decimal('0'), Decimal('100'), Decimal('0.5')),  # (Min price, Max price, Additional fee)
+            (Decimal('100'), Decimal('500'), Decimal('1')),
+            (Decimal('500'), Decimal('1000'), Decimal('1.5')),
+            (Decimal('1000'), Decimal('100000'), Decimal('2')),
+            # Add more ranges if needed
+        ]
+        
+        # Determine the additional fee based on the price range
+        additional_fee = Decimal('0')
+        for min_price, max_price, fee in price_ranges:
+            if min_price <= price < max_price:
+                additional_fee = fee
+                break
+        
+        # If the price is above all defined ranges, apply the maximum additional fee
+        if price >= price_ranges[-1][1]:
+            additional_fee = price_ranges[-1][2]
 
-        if price >= highest_price_threshold:
-            # For products priced at or above $10,000, use the highest margin factor
-            profit = price * highest_margin_factor
-        elif price >= high_price_threshold:
-            # For products priced between $500 and $10,000, use the high margin factor
-            profit = price * high_margin_factor
-        else:
-            # For all other products, use the standard margin factor
-            profit = price * standard_margin_factor
-
-        return price + profit
-
+        # Calculate the total price including the dynamic additional fee
+        total_price = price + additional_fee
+        return total_price
+    
     def perform_create(self, serializer):
         price = serializer.validated_data['price']
-        # Calculate the profit-adjusted price
         adjusted_price = self.calculate_profit(price)
-        # Update the product's price with the adjusted price
         serializer.validated_data['price'] = adjusted_price
-        # Set the product's vendor to the authenticated vendor
         vendor = Vendor.objects.get(user=self.request.user)
         serializer.validated_data['vendor'] = vendor
         serializer.save()
@@ -95,7 +100,7 @@ class ListVendorProducts(generics.ListAPIView):
             return super().list(request, *args, **kwargs)
         
 class UpdateProductView(generics.UpdateAPIView):
-    serializer_class = ProductCreateSerializer
+    serializer_class = ProductUpdateSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
 
@@ -112,6 +117,71 @@ class UpdateProductView(generics.UpdateAPIView):
         else:
             # Raise a permission denied exception or return an error response
             raise PermissionDenied("You do not have permission to edit this product.")
+        
+    def calculate_profit(self, price):
+        # Convert string to Decimal if it's not already
+        price = Decimal(str(price))
+        
+        # Define price ranges and their corresponding additional fees
+        price_ranges = [
+            (Decimal('0'), Decimal('100'), Decimal('0.5')),  # (Min price, Max price, Additional fee)
+            (Decimal('100'), Decimal('500'), Decimal('1')),
+            (Decimal('500'), Decimal('1000'), Decimal('1.5')),
+            (Decimal('1000'), Decimal('100000'), Decimal('2')),
+            # Add more ranges if needed
+        ]
+        
+        # Determine the additional fee based on the price range
+        additional_fee = Decimal('0')
+        for min_price, max_price, fee in price_ranges:
+            if min_price <= price < max_price:
+                additional_fee = fee
+                break
+        
+        # If the price is above all defined ranges, apply the maximum additional fee
+        if price >= price_ranges[-1][1]:
+            additional_fee = price_ranges[-1][2]
+
+        # Calculate the total price including the dynamic additional fee
+        total_price = price + additional_fee
+        return total_price
+    
+    def update(self, request, *args, **kwargs):
+        product = self.get_object()
+
+        # Check if the price is being updated
+        if 'price' in request.data:
+            try:
+                # Convert the new price to Decimal and add the additional fee
+                new_price = Decimal(request.data['price'])
+                final_price = self.calculate_profit(new_price)
+
+                # Instead of modifying request.data, pass the modified price as context to the serializer
+                serializer_context = {
+                    'request': request,
+                    'format': self.format_kwarg,
+                    'view': self,
+                    'final_price': final_price
+                }
+
+                # Get the serializer instance
+                serializer = self.get_serializer(product, data=request.data, context=serializer_context, partial=kwargs.pop('partial', False))
+
+                # Check if the serializer is valid
+                serializer.is_valid(raise_exception=True)
+
+                # Perform the update
+                self.perform_update(serializer)
+
+                # Return the response
+                return Response(serializer.data)
+
+            except (ValueError, TypeError):
+                return Response({"message": "Invalid price format"}, status=400)
+
+        else:
+            # If price isn't being updated, just use the default update logic
+            return super().update(request, *args, **kwargs)
 
 class DeleteProductView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -188,14 +258,16 @@ class VendorDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated, IsVendor]
     def get_object(self):
         # Get the authenticated user's vendor
-        vendor = Vendor.objects.get(user=self.request.user)
+        pk = self.kwargs['pk']
+        vendor = Vendor.objects.get(pk=pk)
         # Get the vendor's profile
         vendor_profile = VendorProfile.objects.get(vendor=vendor)
         return vendor_profile
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        return Response({"data":serializer.data,"message": "Vendor details fetched successfully"}, status=status.HTTP_200_OK)
+        amount_of_followers = instance.followers.count()
+        return Response({"data":serializer.data, "Total Followers": amount_of_followers}, status=status.HTTP_200_OK)
 
 class VendorProfileUpdateView(generics.UpdateAPIView):
     serializer_class = VendorProfileUpdateSerializer
@@ -221,7 +293,7 @@ class VendorAddFollowersView(generics.CreateAPIView):
     def get_object(self):
         # Get the authenticated user's vendor
         user = pk=self.kwargs['pk']
-        vendor = Vendor.objects.get(user=user)
+        vendor = Vendor.objects.get(pk=user)
         # Get the vendor's profile
         vendor_profile = VendorProfile.objects.get(vendor=vendor)
         return vendor_profile
@@ -231,3 +303,67 @@ class VendorAddFollowersView(generics.CreateAPIView):
         instance.followers.add(user)
         instance.save()
         return Response({"message": "User added successfully"}, status=status.HTTP_200_OK)
+
+class VendorRemoveFollowersView(generics.CreateAPIView):
+    serializer_class = VendorProfileUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def get_object(self):
+        # Get the authenticated user's vendor
+        user = pk=self.kwargs['pk']
+        vendor = Vendor.objects.get(pk=user)
+        # Get the vendor's profile
+        vendor_profile = VendorProfile.objects.get(vendor=vendor)
+        return vendor_profile
+    def create(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = User.objects.get(pk=request.user.id)
+        instance.followers.remove(user)
+        instance.save()
+        return Response({"message": "User removed successfully"}, status=status.HTTP_200_OK)
+
+class VendorFollowersView(generics.ListAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = VendorFollowersSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        user = self.kwargs['pk']  # Corrected line
+        vendor = Vendor.objects.get(pk=user)
+        # Get the vendor's profile
+        vendor_profile = VendorProfile.objects.filter(vendor=vendor)  # Corrected line
+        return vendor_profile
+
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No followers for this vendor"}, status=status.HTTP_200_OK)
+        
+        followers_list = []
+        for user in queryset[0].followers.all():
+            user_profile = User.objects.get(email=user)
+            serializer = FullUserSerializer(user_profile, context={'request': request})
+            followers_list.append(serializer.data)
+
+        number_of_followers = len(followers_list)
+        
+        return Response({
+            "Total Followers": number_of_followers, 
+            "Followers": followers_list
+        }, status=status.HTTP_200_OK)
+
+class VerifyVendorPinView(generics.CreateAPIView):
+    serializer_class = VerifyVendorPinSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        pin = serializer.validated_data['pin']
+        vendor = Vendor.objects.get(user=request.user)
+        if vendor.pin == pin:
+            return Response({"message": "Pin is correct"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Pin is incorrect"}, status=status.HTTP_400_BAD_REQUEST)

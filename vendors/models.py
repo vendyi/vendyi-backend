@@ -8,17 +8,38 @@ from django.utils import timezone
 
 class Vendor(models.Model):
     '''Model definition for Vendor.'''
+    momo_choices = ((0,"MTN"),(1,'Vodafone'), (2,"Airtel-Tigo"), (3,"Other"))
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="is_vendor")
-    shop_name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(max_length=500)
-    location = models.CharField(max_length=255)
+    #Contact Information
+    email = models.EmailField(max_length=255,)
     phone_number = models.CharField(max_length=50)
-    website = models.URLField(validators=[URLValidator()], blank=True, null=True)
+    location = models.CharField(max_length=255)
+    
+    #Personal Information
+    full_name = models.CharField(max_length=255)
+    date_of_birth = models.DateField()
     ID_card = models.ImageField(upload_to='media/vendors/ID_cards', null=True, blank=True, validators=[validate_image_file_extension])
+    
+    #Shop Information
+    shop_name = models.CharField(max_length=255, unique=True)
+    product_or_service = models.CharField(max_length=255)
+    description = models.TextField(max_length=500)
+    website = models.URLField(validators=[URLValidator()], blank=True, null=True)
+    
+    #Payment Information
+    momo_number = models.CharField(max_length=50)
+    momo_type = models.IntegerField(choices=momo_choices)
+    
+    #Security Information
+    pin = models.CharField(max_length=5)
+    security_question = models.CharField(max_length=255)
+    security_answer = models.CharField(max_length=255)
+    
+    #Other Information
     is_active = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add= True)
 
-      # custom manager
+
 
     class Meta:
         '''Meta definition for Vendor.'''
@@ -59,7 +80,19 @@ class Wallet(models.Model):
     total_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     available_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     pending_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    def add_pending_balance(self, amount):
+        self.pending_balance += amount
+        self.total_balance += amount
+        self.save()
 
+    def make_balance_available(self, transaction):
+        if transaction.status == Transaction.PENDING:
+            self.available_balance += transaction.amount
+            self.pending_balance -= transaction.amount
+            transaction.status = Transaction.AVAILABLE
+            transaction.cleared_at = timezone.now()
+            transaction.save()
+            self.save()
     def __str__(self):
         return f"Wallet for {self.vendor.id} - Total: {self.total_balance}, Available: {self.available_balance}"
 

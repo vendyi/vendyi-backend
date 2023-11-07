@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from vendors.serializers import VendorSerializer
 from product.models import RecentlyViewed
 class ProductListSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
@@ -21,7 +22,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
-    vendor = serializers.StringRelatedField()
+    vendor = VendorSerializer()
     colors = serializers.StringRelatedField(many=True, required=False)
     sizes = serializers.StringRelatedField(many=True, required=False)
     class Meta:

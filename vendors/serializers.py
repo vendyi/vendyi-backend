@@ -23,6 +23,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
         read_only_fields = ["vendor"]
+    
         
 class PromoCodeSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=255)
@@ -35,3 +36,34 @@ class PromocodeListSerializer(serializers.ModelSerializer):
         model = Promo_Code
         fields = '__all__'
         read_only_fields = ['vendor']
+
+class VendorFollowersSerializer(serializers.ModelSerializer):
+    followers = serializers.SerializerMethodField()
+    class Meta:
+        model = VendorProfile
+        fields = ['followers']
+    def get_followers(self, obj):
+        return[user.username for user in obj.followers.all()]
+
+class ProductUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    main_image = serializers.ImageField(required=False)
+    additional_images = serializers.JSONField(required=False)  # If using PostgreSQL
+    description = serializers.CharField(required=False)
+    
+    class Meta:
+        model = Product
+        fields = '__all__'
+        read_only_fields = ['vendor']
+    
+    def update(self, instance, validated_data):
+        # Check if final_price is in the context and use it to update the price
+        if 'final_price' in self.context:
+            validated_data['price'] = self.context['final_price']
+        
+        # Perform the standard update
+        return super().update(instance, validated_data)
+  
+class VerifyVendorPinSerializer(serializers.Serializer):
+    pin = serializers.CharField(max_length=255)

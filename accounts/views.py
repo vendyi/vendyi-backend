@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
+import os
 from rest_framework import generics, status
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.exceptions import AuthenticationFailed
@@ -48,7 +49,7 @@ class UserOtpVerification(generics.CreateAPIView):
         }
 
         headers = {
-        'api-key': 'ZHNRdG1MbGVNallQV0FnZVBSTWg'
+        'api-key': os.environ.get('ARK_API_KEY'),
         }
 
         url = 'https://sms.arkesel.com/api/otp/verify'
@@ -64,7 +65,7 @@ class UserOtpVerification(generics.CreateAPIView):
         elif response.status_code == 200 and response.json().get("message") == "Code has expired":
             return Response({"message": "Code has expired"}, status=400)
         elif response.status_code == 200 and response.json().get("message") == "Invalid code":
-            return Response({"message": "Invalid code"}, status=400)
+            return Response({"message": "Code incorrect"}, status=400)
         else:
             print(f"Error: {response.status_code} and {response.json()}")
             return Response({"message": "Code incorrect"}, status=400)
@@ -113,3 +114,39 @@ class UserProfileUpdateView(generics.UpdateAPIView):
 class UserListView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = FullUserSerializer
+
+class UserResendOTP(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserResendOtpSerializer
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        phone = serializer.validated_data.get('phone')
+        user = User.objects.get(phone_number=phone)
+        message = f"Hello {user.username}, Welcome to Vendyi."
+        data = {
+        'expiry': 5,
+        'length': 6,
+        'medium': 'sms',
+        'message': message+' This is your verification code:\n%otp_code%\nPlease do not share this code with anyone.',
+        'number': phone,
+        'sender_id': 'Vendyi',
+        'type': 'numeric',
+        }
+
+        headers = {
+        'api-key': os.environ.get('ARK_API_KEY'),
+        }
+
+        url = 'https://sms.arkesel.com/api/otp/generate'
+
+        response = requests.post(url, json=data, headers=headers)
+
+        if response.status_code == 200 and response.json().get("message") == "Successful":
+            print(response.json())
+            return Response({"message": "OTP sent"}, status=200)
+        else:
+            print(f"Error: {response.status_code} and {response.json()}")
+            return Response({"message": "OTP not sent"}, status=400)
