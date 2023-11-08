@@ -9,7 +9,7 @@ These codes just handle recently viewed items with a basic user profile doe user
 """
 
 class MyAccountManager(BaseUserManager):
-    def create_user(self, username, email, phone_number, password=None):
+    def create_user(self, username, email, password=None):
         if not email:
             raise ValueError('User must have an email address')
         
@@ -19,7 +19,6 @@ class MyAccountManager(BaseUserManager):
         user = self.model(
             email = self.normalize_email(email),
             username = username,
-            phone_number = phone_number,
         )
 
         user.set_password(password)
