@@ -11,7 +11,9 @@ urlpatterns = [
     path('user/<int:pk>/', UserListView.as_view(), name='user-list'),
     path('profile/<int:pk>/', UserProfileUpdateView.as_view(), name='profile-update'),
     path('resend-otp/', UserResendOTP.as_view(), name='resend-otp'),
-    path('', include('dj_rest_auth.urls')),
+    path('auth/', include('dj_rest_auth.urls')),
+    path('auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('social-auth/', include('social_django.urls', namespace='social')),
     path('password/reset/confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('password/reset/complete/', PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
