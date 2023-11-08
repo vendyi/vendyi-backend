@@ -2,6 +2,7 @@ from django.urls import path,include
 from .views import *
 from django.contrib.auth.views import PasswordResetConfirmView, PasswordResetCompleteView
 urlpatterns = [
+    path('exchange-token/', exchange_token, name='exchange-token'),
     path('get-user-token/', get_user_token, name="get_token"),
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('login/', UserLoginView.as_view(), name='login'),
