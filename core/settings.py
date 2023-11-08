@@ -59,8 +59,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'channels',
     'allauth',
-    'chat',
     'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'chat',
     'dj_rest_auth',
     'storages',
 ]
@@ -195,3 +197,4 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 EXPRESSPAY_API_KEY = os.environ.get('EXPRESSPAY_API_KEY')
 EXPRESSPAY_MERCHANT_ID = os.environ.get('EXPRESSPAY_MERCHANT_ID')
 # ... other configuration as needed
+LOGIN_REDIRECT_URL = '/acoount/login/'
