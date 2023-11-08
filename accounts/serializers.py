@@ -72,6 +72,7 @@ class UserResendOtpSerializer(serializers.Serializer):
         message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
     )
     phone = serializers.CharField(validators=[phone_regex], max_length=17, required=True)
+    user_id = serializers.CharField()
 
 class UserOtpVerificationSerializer(serializers.Serializer):
     phone_regex = RegexValidator(
@@ -79,4 +80,5 @@ class UserOtpVerificationSerializer(serializers.Serializer):
         message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
     )
     code = serializers.CharField()
+    user_id = serializers.CharField()
     phone = serializers.CharField(validators=[phone_regex], max_length=17, required=True)

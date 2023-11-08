@@ -42,6 +42,7 @@ class UserOtpVerification(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         
         code = serializer.validated_data.get('code')
+        user_id = serializer.validated_data.get('user_id')
         phone = serializer.validated_data.get('phone')
         data = {
             "code": code,
@@ -58,7 +59,7 @@ class UserOtpVerification(generics.CreateAPIView):
 
         if response.status_code == 200 and response.json().get("message") == "Successful":
             print(response.json())
-            user = User.objects.get(phone_number=phone)
+            user = User.objects.get(pk=user_id)
             user.is_active = True
             user.save()
             return Response({"message": "User is verified"}, status=200)
@@ -124,7 +125,8 @@ class UserResendOTP(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         
         phone = serializer.validated_data.get('phone')
-        user = User.objects.get(phone_number=phone)
+        user_id = serializer.validated_data.get('user_id')
+        user = User.objects.get(pk=user_id)
         message = f"Hello {user.username}, Welcome to Vendyi."
         data = {
         'expiry': 5,
