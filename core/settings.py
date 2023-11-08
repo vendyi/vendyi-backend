@@ -197,4 +197,5 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 EXPRESSPAY_API_KEY = os.environ.get('EXPRESSPAY_API_KEY')
 EXPRESSPAY_MERCHANT_ID = os.environ.get('EXPRESSPAY_MERCHANT_ID')
 # ... other configuration as needed
-LOGIN_REDIRECT_URL = '/acoount/login/'
+LOGIN_REDIRECT_URL = '/account/login/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/account/login/'
