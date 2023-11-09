@@ -193,7 +193,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-ASGI_APPLICATION = 'core.routing.application'
+ASGI_APPLICATION = 'core.asgi.application'
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
