@@ -3,8 +3,8 @@ import json
 import websockets
 
 async def test():
-    token = "a765d41713edb64df7ef10dc7441bdf1d05559f1"
-    async with websockets.connect(f"wss://vendyi-92322aa588dc.herokuapp.com/ws/chat/chat_3_11/?token={token}") as websocket:
+    token = "01e6ffed3b74832b6481eff0268f7f1e9806633a"
+    async with websockets.connect(f"ws://localhost:8000/ws/chat/chat_1_2/?token={token}") as websocket:
         # Listen for messages
         while True:
             message = await websocket.recv()

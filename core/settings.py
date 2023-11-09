@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import dj_database_url
 import os
+import ssl
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -109,7 +110,10 @@ WSGI_APPLICATION = "core.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
 
@@ -189,12 +193,24 @@ redis_url = urlparse(os.environ.get('REDIS_URL', 'rediss://localhost:6379'))
 redis_host = redis_url.hostname
 redis_port = redis_url.port
 redis_pass = redis_url.password
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get('REDIS_URL'),
+        "OPTIONS": {
+            "ssl_cert_reqs": None  # Only if using SSL
+        }
+    }
+}
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [(redis_host, redis_port)],
+            "hosts":[{
+            "address": os.environ.get('REDIS_URL', 'rediss://localhost:6379'),  # "REDIS_TLS_URL"
+            "ssl_cert_reqs": None,
+        }],
             "symmetric_encryption_keys": [redis_pass],
             
         },
