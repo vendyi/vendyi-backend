@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "social_django",
     "accounts",
     "bonus",
     "cart",
@@ -201,3 +202,5 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 EXPRESSPAY_API_KEY = os.environ.get('EXPRESSPAY_API_KEY')
 EXPRESSPAY_MERCHANT_ID = os.environ.get('EXPRESSPAY_MERCHANT_ID')
 # ... other configuration as needed
+# settings.py
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
