@@ -8,32 +8,15 @@ from rest_framework import generics, status
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from social_django.utils import load_strategy, load_backend
-from social_core.exceptions import AuthException
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
+CALLBACK_URL_YOU_SET_ON_GOOGLE = os.environ.get('CALLBACK_URL_YOU_SET_ON_GOOGLE')
 
-
-@api_view(['POST'])
-def exchange_token(request):
-    strategy = load_strategy(request)
-    backend = load_backend(strategy=strategy, name='google-oauth2', redirect_uri=None)
-
-    # The authorization code sent from the React Native app
-    code = request.data.get('code')
-
-    try:
-        # Perform the exchange of the code for a social auth token
-        user = backend.do_auth(code)
-
-        if user and user.is_active:
-            # Generate or retrieve a REST auth token for the user
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'username': user.username, 'email': user.email, 'id': user.id})
-        else:
-            return Response({'error': 'Authentication failed'}, status=status.HTTP_400_BAD_REQUEST)
-
-    except AuthException as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    callback_url = CALLBACK_URL_YOU_SET_ON_GOOGLE
+    client_class = OAuth2Client
 
 @api_view(["GET"])
 def get_user_token(request):
