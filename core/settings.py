@@ -193,15 +193,6 @@ redis_url = urlparse(os.environ.get('REDIS_URL', 'rediss://localhost:6379'))
 redis_host = redis_url.hostname
 redis_port = redis_url.port
 redis_pass = redis_url.password
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get('REDIS_URL'),
-        "OPTIONS": {
-            "ssl_cert_reqs": None  # Only if using SSL
-        }
-    }
-}
 
 CHANNEL_LAYERS = {
     'default': {
