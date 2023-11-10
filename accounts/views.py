@@ -4,6 +4,8 @@ from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
 import os
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework import generics, status
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.exceptions import AuthenticationFailed
@@ -108,22 +110,51 @@ class UserLoginView(generics.CreateAPIView):
 
 class UserLogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
-
+    authentication_classes = [TokenAuthentication,SessionAuthentication]
     def get(self, request, *args, **kwargs):
         logout(request)
         return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
 
 class UserUpdateView(generics.UpdateAPIView):
-    queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
     serializer_class = UserSerializer
 
-class UserProfileUpdateView(generics.UpdateAPIView):
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
-class UserListView(generics.RetrieveAPIView):
-    queryset = User.objects.all()
+class UserProfileUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    serializer_class = UserProfileSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+    def get_object(self):
+        return UserProfile.objects.get(user=self.request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class UserListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication,SessionAuthentication]
     serializer_class = FullUserSerializer
+    def get_queryset(self):
+        return User.objects.filter(pk=self.request.user.id)
 
 class UserResendOTP(generics.CreateAPIView):
     queryset = User.objects.all()
