@@ -17,4 +17,7 @@ urlpatterns = [
     path("remove-follower/<int:pk>/", VendorRemoveFollowersView.as_view(), name="remove-follower"),
     path("followers/<int:pk>/", VendorFollowersView.as_view(), name="followers"),
     path("verify-pin/", VerifyVendorPinView.as_view(), name="verify-pin"),
+    path('vendor-active-hours/create/', VendorActiveHoursCreateView.as_view(), name='vendor-active-hours-list-create'),
+    path('vendor-active-hours/<int:pk>/', VendorActiveHoursListView.as_view(), name='vendor-active-hours-list'),
+    path('vendor-active-hours/<int:pk>/', VendorActiveHoursRetrieveUpdateDestroyView.as_view(), name='vendor-active-hours-detail'),
 ]
