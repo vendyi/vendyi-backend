@@ -4,7 +4,7 @@ from accounts.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-
+from django.core.exceptions import ValidationError
 
 class Vendor(models.Model):
     '''Model definition for Vendor.'''
@@ -57,7 +57,35 @@ class VendorProfile(models.Model):
 
     def __str__(self):
         return self.vendor.shop_name
-    
+
+class VendorActiveHours(models.Model):
+
+    vendor = models.ForeignKey('Vendor', on_delete=models.CASCADE)
+    day_of_week = models.IntegerField(choices=[(0, 'Sunday'), (1, 'Monday'), (2, 'Tuesday'), (3, 'Wednesday'), (4, 'Thursday'), (5, 'Friday'), (6, 'Saturday')])
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('vendor', 'day_of_week', 'start_time', 'end_time')
+        
+    def clean(self):
+        # Validation to ensure start_time is before end_time
+        if self.start_time >= self.end_time:
+            raise ValidationError("End time must be after start time")
+
+        # Validation to prevent overlapping times
+        overlapping_times = VendorActiveHours.objects.filter(
+            vendor=self.vendor,
+            day_of_week=self.day_of_week,
+            start_time__lt=self.end_time,
+            end_time__gt=self.start_time
+        ).exclude(id=self.id)
+        if overlapping_times.exists():
+            raise ValidationError("Overlapping active hours for the same day are not allowed.")
+    def __str__(self):
+        return f"{self.vendor.shop_name} - {self.get_day_of_week_display()} ({self.start_time} to {self.end_time})"
+   
 #this signal automatically creates a vendor profile when a vendor is created.
 @receiver(post_save, sender=Vendor)
 def create_vendor_profile(sender, instance, created, **kwargs):

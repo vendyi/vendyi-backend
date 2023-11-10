@@ -24,6 +24,17 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ["vendor"]
     
+class VendorActiveHoursSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorActiveHours
+        fields = ['id', 'vendor', 'day_of_week', 'start_time', 'end_time', 'is_active']  
+
+class VendorActiveHoursListSerializer(serializers.ModelSerializer):
+    vendor = serializers.StringRelatedField()
+    day_of_week = serializers.CharField(source='get_day_of_week_display')
+    class Meta:
+        model = VendorActiveHours
+        fields = ['id', 'vendor', 'day_of_week', 'start_time', 'end_time', 'is_active']  
         
 class PromoCodeSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=255)

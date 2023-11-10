@@ -367,3 +367,33 @@ class VerifyVendorPinView(generics.CreateAPIView):
             return Response({"message": "Pin is correct"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Pin is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+
+class VendorActiveHoursCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    queryset = VendorActiveHours.objects.all()
+    serializer_class = VendorActiveHoursSerializer
+
+    def perform_create(self, serializer):
+        # You can add additional logic here if needed
+        if serializer.validated_data['start_time'] >= serializer.validated_data['end_time']:
+            raise serializers.ValidationError("Start time must be earlier than end time.")
+        serializer.save()
+
+class VendorActiveHoursListView(generics.ListAPIView):
+    
+    queryset = VendorActiveHours.objects.all()
+    serializer_class = VendorActiveHoursListSerializer
+    
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        pk = self.kwargs['pk']
+        vendor = Vendor.objects.get(pk=pk)
+        # Filter active hours by the vendor
+        return VendorActiveHours.objects.filter(vendor=vendor)
+
+class VendorActiveHoursRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    queryset = VendorActiveHours.objects.all()
+    serializer_class = VendorActiveHoursSerializer
