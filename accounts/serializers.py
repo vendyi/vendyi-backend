@@ -5,6 +5,8 @@ import requests
 import os
 from rest_framework.response import Response
 class UserProfileSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(max_length=None, use_url=True)
+
     class Meta:
         model = UserProfile
         fields = ['image']
@@ -14,10 +16,14 @@ class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     email = serializers.CharField(required=False)
-    phone_number = serializers.CharField(required=False)
+    phone_regex = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$',
+        message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
+    )
+    phone_number = serializers.CharField(validators=[phone_regex], max_length=17, required=False)
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'username']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'username', 'id']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
