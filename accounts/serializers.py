@@ -21,9 +21,10 @@ class UserSerializer(serializers.ModelSerializer):
         message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
     )
     phone_number = serializers.CharField(validators=[phone_regex], max_length=17, required=False)
+    pin = serializers.CharField(max_length=5, required=False)
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'username', 'id']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'username', 'id', 'pin']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,6 +81,9 @@ class UserResendOtpSerializer(serializers.Serializer):
     )
     phone = serializers.CharField(validators=[phone_regex], max_length=17, required=True)
     user_id = serializers.CharField()
+
+class VerifyUserPinSerializer(serializers.Serializer):
+    pin = serializers.CharField(max_length=5)
 
 class UserOtpVerificationSerializer(serializers.Serializer):
     phone_regex = RegexValidator(

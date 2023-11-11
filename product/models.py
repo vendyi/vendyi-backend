@@ -18,7 +18,7 @@ class SizeOption(models.Model):
 class Category(models.Model):
     title = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
-    image = models.ImageField(upload_to='media/category/', null=True, blank=True)
+    image = models.ImageField(upload_to='category/', null=True, blank=True)
     
     class Meta:
         verbose_name_plural = 'Categories'
@@ -34,20 +34,20 @@ class Category(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    main_image = models.ImageField(upload_to='media/products/')
+    main_image = models.ImageField(upload_to='products/')
     additional_images = models.JSONField(null=True, blank=True)  # If using PostgreSQL
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     date_added = models.DateTimeField(auto_now_add=True)
     in_stock = models.BooleanField(default=True)
-    amount_in_stock = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    amount_in_stock = models.IntegerField(default=0)
     discount_percentage = models.DecimalField(default=0,max_digits=5, decimal_places=2, blank=True, null=True)
-    discount_start_date = models.DateField(blank=True, null=True)
-    discount_end_date = models.DateField(blank=True, null=True)
+    discount_start_date = models.DateTimeField(blank=True, null=True)
+    discount_end_date = models.DateTimeField(blank=True, null=True)
     colors = models.ManyToManyField(ColorOption, blank=True)
     sizes = models.ManyToManyField(SizeOption, blank=True)
-    likes = models.DecimalField(default=0, max_digits=10, decimal_places=2)
+    likes = models.IntegerField(default=0)
 
     def increment_likes(self):
         self.likes += 1

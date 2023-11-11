@@ -108,4 +108,4 @@ class VendorUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ['is_active', 'date_joined']
  
 class VerifyVendorPinSerializer(serializers.Serializer):
-    pin = serializers.CharField(max_length=255)
+    pin = serializers.CharField(max_length=5)
