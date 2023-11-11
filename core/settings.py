@@ -13,8 +13,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import dj_database_url
 import os
-import ssl
-from urllib.parse import urlparse
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,7 +42,6 @@ REST_AUTH_SERIALIZERS = {
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'daphne',
     "django.contrib.admin",
@@ -53,15 +50,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-    "social_django",
-=======
     'django_filters',
     'django_cryptography',
->>>>>>> Stashed changes
->>>>>>> Stashed changes
     "accounts",
     "bonus",
     "cart",
@@ -121,6 +111,7 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -193,29 +184,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = 'accounts.User'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Parse the Redis URL
-redis_url = urlparse(os.environ.get('REDIS_URL', 'rediss://localhost:6379'))
-redis_host = redis_url.hostname
-redis_port = redis_url.port
-redis_pass = redis_url.password
-
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts":[{
-            "address": os.environ.get('REDIS_URL', 'rediss://localhost:6379'),  # "REDIS_TLS_URL"
-            "ssl_cert_reqs": None,
-        }],
-            "symmetric_encryption_keys": [redis_pass],
-            
+            "hosts": [(os.environ.get('REDIS_URL'), 12340)],
         },
     },
 }
 
 ASGI_APPLICATION = 'core.asgi.application'
-SECURE_SSL_REDIRECT = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#SECURE_SSL_REDIRECT = True
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # settings.py
 
