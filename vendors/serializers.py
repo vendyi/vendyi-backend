@@ -2,10 +2,21 @@ from rest_framework import serializers
 from .models import *
 from product.models import Product
 class VendorSerializer(serializers.ModelSerializer):
+    number_of_products = serializers.SerializerMethodField()
+    momo_type = serializers.CharField(source='get_momo_type_display')
+    number_of_followers = serializers.SerializerMethodField()
     class Meta:
         model = Vendor
-        fields = '__all__'
-        read_only_fields = ['is_active']
+        fields = [
+            'id', 'shop_name', 'product_or_service', 'description', 'website', 
+            'momo_number', 'momo_type', 'number_of_products', 'is_active', 
+            'date_joined', 'email', 'phone_number', 'location', 'number_of_followers',
+        ]
+        read_only_fields = ['is_active', 'number_of_products']
+    def get_number_of_followers(self, obj):
+        return VendorProfile.objects.get(vendor=obj).followers.count()
+    def get_number_of_products(self, obj):
+        return Product.objects.filter(vendor=obj).count()
 
 class VendorProfileSerializer(serializers.ModelSerializer):
     vendor = VendorSerializer()
@@ -75,6 +86,26 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         
         # Perform the standard update
         return super().update(instance, validated_data)
-  
+
+class VendorUpdateSerializer(serializers.ModelSerializer):
+    shop_name = serializers.CharField(required=False)
+    product_or_service = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
+    website = serializers.CharField(required=False)
+    momo_number = serializers.CharField(required=False)
+    momo_type = serializers.ChoiceField(choices=Vendor.momo_choices, required=False)
+    email = serializers.EmailField(required=False)
+    phone_number = serializers.CharField(required=False)
+    location = serializers.CharField(required=False)
+    security_question = serializers.CharField(required=False)
+    pin = serializers.CharField(required=False)
+    security_answer = serializers.CharField(required=False)
+    full_name = serializers.CharField(required=False)
+    date_of_birth = serializers.DateField(required=False)
+    class Meta:
+        model = Vendor
+        fields = '__all__'
+        read_only_fields = ['is_active', 'date_joined']
+ 
 class VerifyVendorPinSerializer(serializers.Serializer):
     pin = serializers.CharField(max_length=255)

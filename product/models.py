@@ -78,6 +78,8 @@ class CommentReply(models.Model):
     text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_vendor_comment = models.BooleanField(default=False)
+    class Meta:
+        verbose_name_plural = 'Comment Replies'
     def __str__(self):
         return self.text
 
