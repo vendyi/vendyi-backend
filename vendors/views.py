@@ -37,7 +37,37 @@ class CreateVendor(generics.CreateAPIView):
     def post(self, request, format=None):
         # The perform_create method handles the creation
         return super(CreateVendor, self).post(request, format)
-    
+
+class VendorListView(generics.ListAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = VendorProfileSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = VendorProfile.objects.all()
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No vendors found"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return super().list(request, *args, **kwargs)
+
+class VendorUpdateView(generics.UpdateAPIView):
+    serializer_class = VendorUpdateSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def get_object(self):
+        vendor = Vendor.objects.get(user=self.request.user)
+        return vendor
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        id_card = request.data.get('ID_card', None)
+        if id_card:
+            serializer.save(is_active=True)
+        else:
+            serializer.save()
+        return Response({"message": "Vendor updated successfully"}, status=status.HTTP_200_OK)
+  
 class CreateProductView(generics.CreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductCreateSerializer
@@ -184,8 +214,9 @@ class UpdateProductView(generics.UpdateAPIView):
             return super().update(request, *args, **kwargs)
 
 class DeleteProductView(generics.DestroyAPIView):
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    queryset = Product.objects.all()
     def destroy(self, request, *args, **kwargs):
         product = self.get_object()
         # Check if the product's vendor matches the authenticated user's vendor
@@ -381,7 +412,6 @@ class VendorActiveHoursCreateView(generics.CreateAPIView):
         serializer.save()
 
 class VendorActiveHoursListView(generics.ListAPIView):
-    
     queryset = VendorActiveHours.objects.all()
     serializer_class = VendorActiveHoursListSerializer
     

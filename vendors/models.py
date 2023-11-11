@@ -4,6 +4,7 @@ from accounts.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django_cryptography.fields import encrypt
 from django.core.exceptions import ValidationError
 
 class Vendor(models.Model):
@@ -31,7 +32,7 @@ class Vendor(models.Model):
     momo_type = models.IntegerField(choices=momo_choices)
     
     #Security Information
-    pin = models.CharField(max_length=5)
+    pin = encrypt(models.CharField(max_length=5))
     security_question = models.CharField(max_length=255)
     security_answer = models.CharField(max_length=255)
     
@@ -68,6 +69,7 @@ class VendorActiveHours(models.Model):
 
     class Meta:
         unique_together = ('vendor', 'day_of_week', 'start_time', 'end_time')
+        verbose_name_plural = 'Vendor Active Hours'
         
     def clean(self):
         # Validation to ensure start_time is before end_time

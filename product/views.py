@@ -3,16 +3,20 @@ from rest_framework.response import Response
 from .models import *
 from accounts.models import *
 from .serializers import *
-from vendors.serializers import VendorSerializer
+from vendors.serializers import VendorProfileSerializer
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsVendor
-from vendors.models import Vendor
+from vendors.models import Vendor, VendorProfile
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework.generics import get_object_or_404
 from django.db.models import Count
+from django_filters import rest_framework as filters
+from .filters import ProductFilter
+
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductListSerializer
-
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = ProductFilter
     def get_queryset(self):
         queryset = Product.objects.all()
         return queryset
@@ -26,7 +30,8 @@ class ProductListView(generics.ListAPIView):
 
 class ProductsByCategoryView(generics.ListAPIView):
     serializer_class = ProductCategorySerializer
-
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = ProductFilter
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
         category = get_object_or_404(Category, slug=category_slug)
@@ -349,30 +354,35 @@ class WishlistRemoveView(generics.CreateAPIView):
 
 class SearchView(generics.CreateAPIView):
     serializer_class = SearchSerializer
-
-    def get_queryset(self):
-        
-        keyword = self.request.data.get('keyword')
-        if keyword[0] == "@":
-            queryset = Vendor.objects.filter(shop_name__icontains=keyword[1:])
-           
-        else:
-            queryset = Product.objects.filter(title__icontains=keyword)
-        return queryset
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = ProductFilter
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         keyword = serializer.validated_data.get('keyword')
-        queryset = self.get_queryset()
-        if queryset.exists():
-            if keyword[0] == "@":
-                serialized_data = VendorSerializer(queryset, many=True).data
-            else:
-                serialized_data = ProductListSerializer(queryset, many=True).data
-            return Response(serialized_data)
-        
+
+        if keyword.startswith("@"):
+            vendors_query = Vendor.objects.filter(shop_name__icontains=keyword[1:])
+            for vendor in vendors_query:
+                vendor_profile = VendorProfile.objects.filter(vendor=vendor)
+            vendors_data = VendorProfileSerializer(vendor_profile, many=True).data
+            return Response({'vendors': vendors_data})
+
+        products_query = Product.objects.filter(title__icontains=keyword).prefetch_related('vendor')
+        products_data = ProductListSerializer(products_query, many=True).data
+
+        # This assumes you have a reverse relation from Vendor to Product named 'products'
+        vendors_query = Vendor.objects.filter(product__title__icontains=keyword).distinct()
+        for vendor in vendors_query:
+            vendor_profile = VendorProfile.objects.filter(vendor=vendor)
+        vendors_data = VendorProfileSerializer(vendor_profile, many=True).data
+
+        if products_data or vendors_data:
+            return Response({
+                'products': products_data,
+                'vendors': vendors_data
+            })
         else:
-            return Response({"message": "No Products"}, status=404)
-        
+            return Response({"message": "No matches found"}, status=status.HTTP_404_NOT_FOUND)
+          
