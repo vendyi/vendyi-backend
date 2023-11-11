@@ -53,6 +53,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+    "social_django",
+=======
+    'django_filters',
+    'django_cryptography',
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     "accounts",
     "bonus",
     "cart",
