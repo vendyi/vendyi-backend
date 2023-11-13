@@ -34,6 +34,7 @@ class Category(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    vendor_price = models.DecimalField(max_digits=10, decimal_places=2)
     main_image = models.ImageField(upload_to='products/')
     additional_images = models.JSONField(null=True, blank=True)  # If using PostgreSQL
     description = models.TextField()

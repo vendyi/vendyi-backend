@@ -19,9 +19,10 @@ class MessageSerializer(serializers.ModelSerializer):
         return None
 
 class MessageCreateSerializer(serializers.ModelSerializer):
+    chat_room = serializers.StringRelatedField()
     class Meta:
         model = Message
-        fields = ['content', 'receiver', 'reply_to', 'file','id']  # Add 'file' to the list of fields
+        fields = ['chat_room','content', 'receiver', 'reply_to', 'file','id']  # Add 'file' to the list of fields
 
 class ChatRoomSerializer(serializers.ModelSerializer):
     most_recent_message = serializers.SerializerMethodField()
