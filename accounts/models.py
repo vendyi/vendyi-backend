@@ -4,6 +4,7 @@ from django.core.validators import validate_image_file_extension, RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_cryptography.fields import encrypt
+from vendors.models import Promo_Code
 """ 
 Modify these and make them work with the user model u may create 
 These codes just handle recently viewed items with a basic user profile doe users.
@@ -48,6 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=50, blank=True, null=True)
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(max_length=100, unique=True)
+    
     pin = encrypt(models.CharField(max_length=5, blank=True, null=True))
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
@@ -55,7 +57,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True) # validators should be a list
-    
+    promo_code = models.ManyToManyField(Promo_Code, blank=True)
     #required
     date_joined = models.DateTimeField(auto_now_add= True)
     last_login = models.DateTimeField(auto_now=True)

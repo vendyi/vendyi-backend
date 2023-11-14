@@ -132,7 +132,7 @@ class PaymentCreateAPIView(generics.CreateAPIView):
                         
                         vendor = item_data['product'].vendor
                         wallet, created = Wallet.objects.get_or_create(vendor=vendor)
-                        transaction_amount = item_data['quantity'] * item_data['price']
+                        transaction_amount = amount
                         wallet.add_pending_balance(transaction_amount)
                         Transaction.objects.create(
                             vendor=vendor,

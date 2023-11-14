@@ -183,39 +183,33 @@ class UpdateProductView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         product = self.get_object()
 
-        # Check if the price is being updated
-        if 'price' in request.data:
-            try:
-                # Convert the new price to Decimal and add the additional fee
-                new_price = Decimal(request.data['price'])
-                final_price = self.calculate_profit(new_price)
+        # Convert the price to Decimal and add the additional fee
+        price = Decimal(product.price)
+        final_price = self.calculate_profit(price)
 
-                # Instead of modifying request.data, pass the modified price as context to the serializer
-                serializer_context = {
-                    'request': request,
-                    'format': self.format_kwarg,
-                    'view': self,
-                    'final_price': final_price
-                }
+        # Update the vendor_price
+        product.vendor_price = price
+        product.save()
 
-                # Get the serializer instance
-                serializer = self.get_serializer(product, data=request.data, context=serializer_context, partial=kwargs.pop('partial', False))
+        # Instead of modifying request.data, pass the modified price as context to the serializer
+        serializer_context = {
+            'request': request,
+            'format': self.format_kwarg,
+            'view': self,
+            'final_price': final_price
+        }
 
-                # Check if the serializer is valid
-                serializer.is_valid(raise_exception=True)
+        # Get the serializer instance
+        serializer = self.get_serializer(product, data=request.data, context=serializer_context, partial=kwargs.pop('partial', False))
 
-                # Perform the update
-                self.perform_update(serializer)
+        # Check if the serializer is valid
+        serializer.is_valid(raise_exception=True)
 
-                # Return the response
-                return Response(serializer.data)
+        # Perform the update
+        self.perform_update(serializer)
 
-            except (ValueError, TypeError):
-                return Response({"message": "Invalid price format"}, status=400)
-
-        else:
-            # If price isn't being updated, just use the default update logic
-            return super().update(request, *args, **kwargs)
+        # Return the response
+        return Response(serializer.data)
 
 class DeleteProductView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsVendor]
