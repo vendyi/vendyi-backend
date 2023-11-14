@@ -33,7 +33,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
-        read_only_fields = ["vendor"]
+        read_only_fields = ["vendor","likes","discount_percentage","discount_start_date","discount_end_date","in_stock","vendor_price"]
     
 class VendorActiveHoursSerializer(serializers.ModelSerializer):
     class Meta:
@@ -108,4 +108,10 @@ class VendorUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ['is_active', 'date_joined']
  
 class VerifyVendorPinSerializer(serializers.Serializer):
-    pin = serializers.CharField(max_length=255)
+    pin = serializers.CharField(max_length=5)
+    
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+        read_only_fields = ['vendor']

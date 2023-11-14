@@ -1,11 +1,21 @@
 from rest_framework import generics
-import requests
 from rest_framework import status
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from product.models import Product
+from cart.models import Cart, CartItem
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
-from .models import SavedPayment, Order
+from .models import SavedPayment, Order, OrderItem
+from vendors.models import Wallet, Transaction
 from .serializers import SavedPaymentSerializer, PaymentSerializer
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
+
+class StockIssueException(Exception):
+    pass
+
+class PaymentFailureException(Exception):
+    pass
 #Payment Function
 def process_payment():
     return True
@@ -69,49 +79,90 @@ class SavedPaymentUpdateView(generics.UpdateAPIView):
         # Filter the queryset to retrieve the saved payments of the authenticated user
         return SavedPayment.objects.filter(user=self.request.user)
     
-#Actual Payment API
 class PaymentCreateAPIView(generics.CreateAPIView):
     serializer_class = PaymentSerializer
-
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get_serializer_context(self):
+        context = super(PaymentCreateAPIView, self).get_serializer_context()
+        context.update({"request": self.request})
+        return context
     def perform_create(self, serializer):
-        # Extract payment-related data from the serializer
-        order_id = serializer.validated_data.get('order_id')
-        currency = serializer.validated_data.get('currency')
+        user = self.request.user
         amount = serializer.validated_data.get('amount')
-        product = serializer.validated_data.get('product')
-        # Retrieve the order from the database or create a new one
-        order, created = Order.objects.get_or_create(user=self.request.user)
+        order_items_data = serializer.validated_data.get('order_items')
+        
+        order = Order.objects.create(
+            customer=user, 
+            total_price=amount, 
+            status=0  # assuming 'PENDING' is a valid status
+        )
 
-        # Ensure the order is not already paid
+        # Check stock for all items
+        for item_data in order_items_data:
+            product = get_object_or_404(Product, pk=item_data['product'].pk)
+            if not product.in_stock or product.amount_in_stock < item_data['quantity']:
+                raise StockIssueException("Mot enough stock")
+
         if not order.paid:
-            # Replace this with your actual payment processing logic
-            pay = process_payment()
+            with transaction.atomic():
+                if process_payment():
+                    order.paid = True
+                    order.save()
 
-            if pay:
-                # Once payment is processed, update the order and save it
-                order.paid = True
-                order.shipped = True
-                order.product = product
-                order.amount = amount
-                order.save()
+                    for item_data in order_items_data:
+                        product = Product.objects.get(pk=item_data['product'].pk)
+                        order_item = OrderItem.objects.create(
+                            order=order,
+                            product=item_data['product'],
+                            quantity=item_data['quantity'],
+                            price=product.vendor_price
+                        )
+                        if item_data.get('color'):
+                            order_item.color = item_data['color']
+                        if item_data.get('size'):
+                            order_item.size = item_data['size']
+                        order_item.save()
 
-                # Now, you can update the user's cart (assuming you have a Cart model)
-                # Replace this with your cart logic
-                user = self.request.user  # Assuming you're using authentication
-                #user.cart.clear()  # Clear the user's cart
+                        # Update stock
+                        
+                        if product.amount_in_stock > 0:
+                            product.amount_in_stock -= item_data['quantity']
+                            product.save()
+                        
+                        vendor = item_data['product'].vendor
+                        wallet, created = Wallet.objects.get_or_create(vendor=vendor)
+                        transaction_amount = amount
+                        wallet.add_pending_balance(transaction_amount)
+                        Transaction.objects.create(
+                            vendor=vendor,
+                            amount=transaction_amount,
+                            transaction_type=Transaction.CREDIT,
+                            status=Transaction.PENDING
+                        )
 
-                serializer.save(order=order)  # Save the payment record with the associated order
-                return True
-            else:
-                return False
+                    # Clear the user's cart
+                    CartItem.objects.filter(cart__user=user).delete()
+                    
+                    return order
+                else:
+                    raise PaymentFailureException("Payment failed")
         else:
-            return False
+            raise PaymentFailureException("Order Already Paid for")
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if self.perform_create(serializer):
+
+        try:
+            instance = self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=201, headers=headers)
-        else:
-            return Response({"message": "Payment Failed"}, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except StockIssueException as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except PaymentFailureException as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Log this exception for debugging
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

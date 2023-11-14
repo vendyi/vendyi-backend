@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from product.models import Product
 from product.serializers import *
 from .serializers import *
-from accounts.models import User, UserProfile
+from accounts.models import User
+from rest_framework.views import APIView
 from accounts.serializers import *
 from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
@@ -12,7 +13,9 @@ from product.permissions import IsVendor
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 import string
 import secrets
-
+from .analytics import get_total_sales_for_vendor, get_most_sold_items_for_vendor, get_repeat_customers_for_vendor, get_least_sold_items_for_vendor
+from payment.models import Order, OrderItem
+from payment.serializers import OrderSerializer
 
 def generate_promo_code(length=8):
     """Generate a random promo code of the specified length."""
@@ -106,6 +109,7 @@ class CreateProductView(generics.CreateAPIView):
         price = serializer.validated_data['price']
         adjusted_price = self.calculate_profit(price)
         serializer.validated_data['price'] = adjusted_price
+        serializer.validated_data['vendor_price'] = price
         vendor = Vendor.objects.get(user=self.request.user)
         serializer.validated_data['vendor'] = vendor
         serializer.save()
@@ -179,39 +183,33 @@ class UpdateProductView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         product = self.get_object()
 
-        # Check if the price is being updated
-        if 'price' in request.data:
-            try:
-                # Convert the new price to Decimal and add the additional fee
-                new_price = Decimal(request.data['price'])
-                final_price = self.calculate_profit(new_price)
+        # Convert the price to Decimal and add the additional fee
+        price = Decimal(product.price)
+        final_price = self.calculate_profit(price)
 
-                # Instead of modifying request.data, pass the modified price as context to the serializer
-                serializer_context = {
-                    'request': request,
-                    'format': self.format_kwarg,
-                    'view': self,
-                    'final_price': final_price
-                }
+        # Update the vendor_price
+        product.vendor_price = price
+        product.save()
 
-                # Get the serializer instance
-                serializer = self.get_serializer(product, data=request.data, context=serializer_context, partial=kwargs.pop('partial', False))
+        # Instead of modifying request.data, pass the modified price as context to the serializer
+        serializer_context = {
+            'request': request,
+            'format': self.format_kwarg,
+            'view': self,
+            'final_price': final_price
+        }
 
-                # Check if the serializer is valid
-                serializer.is_valid(raise_exception=True)
+        # Get the serializer instance
+        serializer = self.get_serializer(product, data=request.data, context=serializer_context, partial=kwargs.pop('partial', False))
 
-                # Perform the update
-                self.perform_update(serializer)
+        # Check if the serializer is valid
+        serializer.is_valid(raise_exception=True)
 
-                # Return the response
-                return Response(serializer.data)
+        # Perform the update
+        self.perform_update(serializer)
 
-            except (ValueError, TypeError):
-                return Response({"message": "Invalid price format"}, status=400)
-
-        else:
-            # If price isn't being updated, just use the default update logic
-            return super().update(request, *args, **kwargs)
+        # Return the response
+        return Response(serializer.data)
 
 class DeleteProductView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsVendor]
@@ -427,3 +425,61 @@ class VendorActiveHoursRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyA
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = VendorActiveHours.objects.all()
     serializer_class = VendorActiveHoursSerializer
+
+class VendorAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def get(self, request, format=None):
+        vendor_id = Vendor.objects.get(user=request.user).id
+
+        analytics_data = {
+            'total_sales': get_total_sales_for_vendor(vendor_id),
+            'most_sold_items': get_most_sold_items_for_vendor(vendor_id),
+            'repeat_customers': get_repeat_customers_for_vendor(vendor_id),
+            'least_sold_items': get_least_sold_items_for_vendor(vendor_id),
+            # Add more analytics data as needed
+        }
+        return Response(analytics_data)
+
+class VendorWalletView(APIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def get(self, request, format=None):
+        vendor = Vendor.objects.get(user=request.user)
+        wallet, created = Wallet.objects.get_or_create(vendor=vendor)
+        wallet_data = {
+            'total_balance': wallet.total_balance,
+            'available_balance': wallet.available_balance,
+            'pending_balance': wallet.pending_balance,
+        }
+        return Response(wallet_data)
+
+class VendorLowStockProductsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = ProductListSerializer
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Filter products by the vendor
+        return Product.objects.filter(vendor=vendor, amount_in_stock__lte=5)
+
+class VendorOrdersView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = OrderSerializer
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Filter orders by the vendor
+        return Order.objects.filter(items__product__vendor=vendor).distinct()
+
+class VendorTransactionListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = TransactionSerializer
+    def get_queryset(self):
+        # Get the authenticated user's vendor
+        vendor = Vendor.objects.get(user=self.request.user)
+        # Filter transactions by the vendor
+        return Transaction.objects.filter(vendor=vendor).order_by('-created_at')

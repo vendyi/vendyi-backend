@@ -102,6 +102,7 @@ class SetDiscountView(generics.CreateAPIView):
             try:
                 product = Product.objects.get(pk=product_id)
                 product.price -= (product.price * discount_percentage / 100)
+                product.vendor_price -= (product.price * discount_percentage / 100)
                 product.discount_percentage += discount_percentage
                 product.save()
                 if discount_end_date and discount_start_date:
@@ -143,6 +144,7 @@ class TerminateDiscountView(generics.CreateAPIView):
                 # Terminate the discount for the specified product
                 if product.discount_percentage > 0:
                     product.price = (product.price /(1- product.discount_percentage / 100))
+                    product.vendor_price = (product.price /(1- product.discount_percentage / 100))
                     product.discount_percentage = 0
                     product.discount_start_date = None
                     product.discount_end_date = None

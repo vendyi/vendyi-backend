@@ -192,3 +192,18 @@ class UserResendOTP(generics.CreateAPIView):
         else:
             print(f"Error: {response.status_code} and {response.json()}")
             return Response({"message": "OTP not sent"}, status=400)
+
+class VerifyUserPinView(generics.CreateAPIView):
+    serializer_class = VerifyUserPinSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        pin = serializer.validated_data['pin']
+        
+        if request.user.pin == pin:
+            return Response({"message": "Pin is correct"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Pin is incorrect"}, status=status.HTTP_400_BAD_REQUEST)

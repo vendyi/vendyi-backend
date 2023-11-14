@@ -22,4 +22,9 @@ urlpatterns = [
     path('active-hours/create/', VendorActiveHoursCreateView.as_view(), name='vendor-active-hours-list-create'),
     path('active-hours/<int:pk>/', VendorActiveHoursListView.as_view(), name='vendor-active-hours-list'),
     path('active-hours/modify/<int:pk>/', VendorActiveHoursRetrieveUpdateDestroyView.as_view(), name='vendor-active-hours-detail'),
+    path('analytics/', VendorAnalyticsView.as_view(), name='vendor_analytics'),
+    path('wallet/', VendorWalletView.as_view(), name='vendor_wallet'),
+    path('products/low-stock/', VendorLowStockProductsView.as_view(), name='low_stock_products'),
+    path('orders/', VendorOrdersView.as_view(), name='vendor_orders'),
+    path('transactions/', VendorTransactionListView.as_view(), name='vendor_transactions'),
 ]

@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import URLValidator, validate_image_file_extension
-from accounts.models import User
+from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 class Vendor(models.Model):
     '''Model definition for Vendor.'''
     momo_choices = ((0,"MTN"),(1,'Vodafone'), (2,"Airtel-Tigo"), (3,"Other"))
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="is_vendor")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="is_vendor")
     #Contact Information
     email = models.EmailField(max_length=255,)
     phone_number = models.CharField(max_length=50)
@@ -54,7 +54,7 @@ class VendorProfile(models.Model):
     vendor = models.OneToOneField(Vendor, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='media/vendors/profiles', default='media/profile.jpeg', validators=[validate_image_file_extension])
     header_image = models.ImageField(upload_to='media/vendors/headers', validators=[validate_image_file_extension])
-    followers = models.ManyToManyField(User, related_name='following', blank=True,)
+    followers = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='following', blank=True,)
 
     def __str__(self):
         return self.vendor.shop_name
