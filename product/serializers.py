@@ -2,11 +2,24 @@ from rest_framework import serializers
 from .models import *
 from vendors.serializers import VendorSerializer
 from product.models import RecentlyViewed
+
+class ProductColorSerializer(serializers.ModelSerializer):
+    color = serializers.StringRelatedField()
+    class Meta:
+        model = ProductColor
+        fields = ['color', 'is_in_stock']
+
+class ProductSizeSerializer(serializers.ModelSerializer):
+    size = serializers.StringRelatedField()
+    class Meta:
+        model = ProductSize
+        fields = ['size', 'is_in_stock']
+        
 class ProductListSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
     vendor = serializers.StringRelatedField()
-    colors = serializers.StringRelatedField(many=True, required=False)
-    sizes = serializers.StringRelatedField(many=True, required=False)
+    colors = ProductColorSerializer(source='productcolor_set', many=True)
+    sizes = ProductSizeSerializer(source='productsize_set', many=True)
     class Meta:
         model = Product
         fields = "__all__"
@@ -23,8 +36,8 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
     vendor = VendorSerializer()
-    colors = serializers.StringRelatedField(many=True, required=False)
-    sizes = serializers.StringRelatedField(many=True, required=False)
+    colors = ProductColorSerializer(source='productcolor_set', many=True)
+    sizes = ProductSizeSerializer(source='productsize_set', many=True)
     class Meta:
         model = Product
         fields = '__all__'
