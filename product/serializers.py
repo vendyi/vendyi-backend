@@ -43,9 +43,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
        
 class CategorySerializer(serializers.ModelSerializer):
+    products = serializers.SerializerMethodField()
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ['title','id','slug','image','products']
+    def get_products(self, obj):
+        return Product.objects.filter(category=obj).count()
 
 class DiscountSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(required=False)

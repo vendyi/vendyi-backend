@@ -186,7 +186,7 @@ class UserResendOTP(generics.CreateAPIView):
 
         response = requests.post(url, json=data, headers=headers)
 
-        if response.status_code == 200 and response.json().get("message") == "Successful":
+        if response.status_code == 200 and response.json().get("code") == 1000:
             print(response.json())
             return Response({"message": "OTP sent"}, status=200)
         else:
