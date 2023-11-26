@@ -12,7 +12,6 @@ urlpatterns = [
     path('profile/', UserProfileUpdateView.as_view(), name='profile-update'),
     path('resend-otp/', UserResendOTP.as_view(), name='resend-otp'),
     path('dj-rest-auth/', include('dj_rest_auth.urls')),
-    path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
     path('socialaccounts/', include('allauth.socialaccount.urls')),
     path('google/', GoogleLogin.as_view(), name='google_login'),
 
