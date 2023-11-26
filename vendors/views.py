@@ -180,15 +180,30 @@ class UpdateProductView(generics.UpdateAPIView):
         total_price = price + additional_fee
         return total_price
     
+    def check_vendor(self, product, user):
+        try:
+            vendor = Vendor.objects.get(user=user)
+        except Vendor.DoesNotExist:
+            raise PermissionDenied("Vendor not found")
+
+        if product.vendor != vendor:
+            raise PermissionDenied("You do not have permission to edit this product.")
+        
     def update(self, request, *args, **kwargs):
         product = self.get_object()
+        self.check_vendor(product, self.request.user)
 
-        # Convert the price to Decimal and add the additional fee
-        price = Decimal(product.price)
-        final_price = self.calculate_profit(price)
+        price = self.request.data.get('price')
+        if price is not None and price != '':
+            try:
+                final_price = self.calculate_profit(price)
+                product.vendor_price = price
+                product.price=final_price# Set the vendor_price to the calculated final price
+            except ValidationError as e:
+                raise ValidationError({"price": str(e)})
 
-        # Update the vendor_price
-        product.vendor_price = price
+        product.vendor = Vendor.objects.get(user=self.request.user)
+        # Set the product's vendor to the request's user's vendor
         product.save()
 
         # Instead of modifying request.data, pass the modified price as context to the serializer

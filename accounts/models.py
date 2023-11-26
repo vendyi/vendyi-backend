@@ -3,15 +3,13 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.validators import validate_image_file_extension, RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django_cryptography.fields import encrypt
-from vendors.models import Promo_Code
 """ 
 Modify these and make them work with the user model u may create 
 These codes just handle recently viewed items with a basic user profile doe users.
 """
 
 class MyAccountManager(BaseUserManager):
-    def create_user(self, username, email, password=None):
+    def create_user(self, username, email, first_name, last_name, phone_number, password=None):
         if not email:
             raise ValueError('User must have an email address')
         
@@ -21,18 +19,24 @@ class MyAccountManager(BaseUserManager):
         user = self.model(
             email = self.normalize_email(email),
             username = username,
+            phone_number = phone_number,
+            first_name = first_name,
+            last_name = last_name,
         )
+        
         user.is_active = True
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, email, username, phone_number, password):
+    def create_superuser(self, email, username,  first_name, last_name, phone_number, password):
         user = self.create_user(
             email = self.normalize_email(email),
             username = username,
-            password = password,
             phone_number = phone_number,
+            first_name = first_name,
+            last_name = last_name,
+            password = password,
         )
         user.is_admin = True
         user.is_active = True
@@ -49,15 +53,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=50, blank=True, null=True)
     username = models.CharField(max_length=50, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-    
-    pin = encrypt(models.CharField(max_length=5, blank=True, null=True))
+    code = models.CharField(max_length=50, blank=True, null=True)
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
         message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
     )
 
     phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True) # validators should be a list
-    promo_code = models.ManyToManyField(Promo_Code, blank=True)
+    
     #required
     date_joined = models.DateTimeField(auto_now_add= True)
     last_login = models.DateTimeField(auto_now=True)
@@ -66,8 +69,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_superadmin = models.BooleanField(default=False)
     
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email','phone_number']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name','phone_number']
 
     objects = MyAccountManager()
 
@@ -106,4 +109,3 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created and not hasattr(instance, 'UserProfile'):
         UserProfile.objects.create(user=instance)
-    
