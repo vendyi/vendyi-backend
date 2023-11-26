@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.validators import validate_image_file_extension, RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from vendors.models import Promo_Code
 """ 
 Modify these and make them work with the user model u may create 
 These codes just handle recently viewed items with a basic user profile doe users.
@@ -60,7 +61,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True) # validators should be a list
-    
+    promo_code = models.ManyToManyField(Promo_Code, blank=True)
+    pin = models.CharField(max_length=50, blank=True, null=True)    
     #required
     date_joined = models.DateTimeField(auto_now_add= True)
     last_login = models.DateTimeField(auto_now=True)
