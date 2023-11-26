@@ -149,3 +149,22 @@ class ApplyPromoCodeView(generics.CreateAPIView):
         response_data = {"promo_code": promo.code, "total_price": cart.total_price}
         return Response(response_data, status=status.HTTP_200_OK)
 
+class DeleteFromCartView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = CartItemSerializer
+    def delete(self, request, product_id):
+        product = get_object_or_404(Product, pk=product_id)
+        user = request.user
+
+        try:
+            cart = Cart.objects.get(user=user)
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+            cart_item.delete()
+            cart.total_price -= product.price * cart_item.quantity
+            cart.save()
+            return Response({"message": "Item removed from cart"}, status=status.HTTP_200_OK)
+        except Cart.DoesNotExist:
+            return Response({"message": "User does not have a cart"}, status=status.HTTP_400_BAD_REQUEST)
+        except CartItem.DoesNotExist:
+            return Response({"message": "Item not found in the cart"}, status=status.HTTP_404_NOT_FOUND)
