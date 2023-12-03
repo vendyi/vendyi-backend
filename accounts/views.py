@@ -104,13 +104,13 @@ class UserLoginView(generics.CreateAPIView):
         try:
             user = User.objects.get(email=email)
             if user.is_active == False:
-                raise AuthenticationFailed(detail="User is not verified")
+                raise AuthenticationFailed(detail="User is not verified",status_code=400)
         except User.DoesNotExist:
-            raise AuthenticationFailed(detail="Invalid email")
+            raise AuthenticationFailed(detail="Invalid email",status_code=400)
     
         user = authenticate(username=email, password=password)
         if user is None:
-            raise AuthenticationFailed(detail="Invalid password")
+            raise AuthenticationFailed(detail="Invalid password",status_code=400)
 
         token, _ = Token.objects.get_or_create(user=user)
 
