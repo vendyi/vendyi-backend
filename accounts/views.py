@@ -14,7 +14,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
-from django.views.decorators.csrf import csrf_exempt
 CALLBACK_URL_YOU_SET_ON_GOOGLE = os.environ.get('CALLBACK_URL_YOU_SET_ON_GOOGLE')
 
 class GoogleLogin(SocialLoginView):
@@ -89,8 +88,7 @@ class UserOtpVerification(generics.CreateAPIView):
         else:
             print(f"Error: {response.status_code} and {response.json()}")
             return Response({"message": "Code incorrect"}, status=400)
-
-@method_decorator(csrf_exempt, name='dispatch')      
+    
 class UserLoginView(generics.CreateAPIView):
     serializer_class = UserLoginSerializer
 
