@@ -36,12 +36,17 @@ class UserRegistrationView(generics.CreateAPIView):
     permission_classes = [AllowAny]  # Allow anyone to register
 
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == status.HTTP_201_CREATED:
-            user = User.objects.get(username=request.data['username'])
-            token, _ = Token.objects.get_or_create(user=user)
-            response.data['token'] = token.key
-        return response
+        try:
+            response = super().post(request, *args, **kwargs)
+            if response.status_code == status.HTTP_201_CREATED:
+                user = User.objects.get(username=request.data['username'])
+                token, _ = Token.objects.get_or_create(user=user)
+                response.data['token'] = token.key
+            return response
+        except ExternalAPIError as e:
+            # Here you can customize the response as per your frontend requirements
+            return Response({"error": str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        
 
 class UserOtpVerification(generics.CreateAPIView):
     queryset = User.objects.all()
