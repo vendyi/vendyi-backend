@@ -4,6 +4,7 @@ from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
 import os
+from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
@@ -114,8 +115,10 @@ class UserLoginView(generics.CreateAPIView):
 
         token, _ = Token.objects.get_or_create(user=user)
 
-        # Log the user in within the session
-        login(request, user)
+        csrf_token = get_token(request)
+        if csrf_token is not None:
+            # Log the user in within the session
+            login(request, user)
 
         return Response({"message": "Login successful", "token": token.key}, status=status.HTTP_200_OK)
 
