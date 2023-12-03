@@ -4,12 +4,11 @@ from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
 import os
-from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework import generics, status
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, logout
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -114,11 +113,6 @@ class UserLoginView(generics.CreateAPIView):
             raise AuthenticationFailed(detail="Invalid password")
 
         token, _ = Token.objects.get_or_create(user=user)
-
-        csrf_token = get_token(request)
-        if csrf_token is not None:
-            # Log the user in within the session
-            login(request, user)
 
         return Response({"message": "Login successful", "token": token.key}, status=status.HTTP_200_OK)
 
