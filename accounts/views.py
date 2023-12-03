@@ -41,7 +41,9 @@ class UserRegistrationView(generics.CreateAPIView):
             if response.status_code == status.HTTP_201_CREATED:
                 user = User.objects.get(username=request.data['username'])
                 token, _ = Token.objects.get_or_create(user=user)
+                user_id = user.id
                 response.data['token'] = token.key
+                response.data['user_id'] = user_id
             return response
         except ExternalAPIError as e:
             # Here you can customize the response as per your frontend requirements
