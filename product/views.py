@@ -12,11 +12,16 @@ from rest_framework.generics import get_object_or_404
 from django.db.models import Count
 from django_filters import rest_framework as filters
 from .filters import ProductFilter
+from rest_framework.pagination import PageNumberPagination
+# Pagination
+class TenPerPagePagination(PageNumberPagination):
+    page_size = 10
 
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductListSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = ProductFilter
+    pagination_class = TenPerPagePagination
     def get_queryset(self):
         queryset = Product.objects.all()
         return queryset
@@ -32,6 +37,7 @@ class ProductsByCategoryView(generics.ListAPIView):
     serializer_class = ProductCategorySerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = ProductFilter
+    pagination_class = TenPerPagePagination
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
         category = get_object_or_404(Category, slug=category_slug)
@@ -281,7 +287,7 @@ class ProductCommentListView(generics.ListAPIView):
 
 class CommentReplyListView(generics.ListAPIView):
     serializer_class = CommentReplyListSerializer
-    
+    pagination_class = TenPerPagePagination
     def get_queryset(self):
         product_id = self.kwargs['id']
         try:# Assuming you pass the product_id in the URL
@@ -358,7 +364,7 @@ class SearchView(generics.CreateAPIView):
     serializer_class = SearchSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = ProductFilter
-
+    pagination_class = TenPerPagePagination
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
