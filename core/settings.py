@@ -190,8 +190,8 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'core.asgi.application'
-#SECURE_SSL_REDIRECT = True
-#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # settings.py
@@ -201,3 +201,4 @@ EXPRESSPAY_MERCHANT_ID = os.environ.get('EXPRESSPAY_MERCHANT_ID')
 # ... other configuration as needed
 # settings.py
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+CORS_ALLOW_ALL_ORIGINS = True
