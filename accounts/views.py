@@ -54,7 +54,7 @@ class UserOtpVerification(generics.CreateAPIView):
         
         code = serializer.validated_data.get('code')
         user_id = serializer.validated_data.get('user_id')
-        phone = serializer.validated_data.get('phone')
+        phone = User.objects.get(pk=user_id).phone_number
         data = {
             "code": code,
             "number": phone,
@@ -164,7 +164,7 @@ class UserResendOTP(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        phone = serializer.validated_data.get('phone')
+        phone = User.objects.get(pk=serializer.validated_data.get('user_id')).phone_number
         user_id = serializer.validated_data.get('user_id')
         user = User.objects.get(pk=user_id)
         message = f"Hello {user.username}, Welcome to Vendyi."

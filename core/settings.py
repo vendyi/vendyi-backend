@@ -106,7 +106,7 @@ DATABASES = {
     }
 }
 
-DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
+#DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
 
 
 # Password validation
@@ -190,8 +190,8 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'core.asgi.application'
-SECURE_SSL_REDIRECT = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#SECURE_SSL_REDIRECT = True
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # settings.py
