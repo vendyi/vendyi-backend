@@ -5,6 +5,7 @@ from .serializers import *
 from .models import User
 import os
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework import generics, status
@@ -88,17 +89,19 @@ class UserOtpVerification(generics.CreateAPIView):
         else:
             print(f"Error: {response.status_code} and {response.json()}")
             return Response({"message": "Code incorrect"}, status=400)
-    
+
+@method_decorator(csrf_exempt, name='dispatch')   
 class UserLoginView(generics.CreateAPIView):
     serializer_class = UserLoginSerializer
-
+    @method_decorator(csrf_exempt, name='dispatch')
+    @csrf_exempt
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-
+        
         try:
             user = User.objects.get(email=email)
             if user.is_active == False:
