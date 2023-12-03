@@ -4,16 +4,17 @@ from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
 import os
-from rest_framework.views import APIView
+from django.utils.decorators import method_decorator
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework import generics, status
-from django.contrib.auth import authenticate, logout
+from django.contrib.auth import authenticate, login, logout
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
+from django.views.decorators.csrf import csrf_exempt
 CALLBACK_URL_YOU_SET_ON_GOOGLE = os.environ.get('CALLBACK_URL_YOU_SET_ON_GOOGLE')
 
 class GoogleLogin(SocialLoginView):
@@ -88,27 +89,36 @@ class UserOtpVerification(generics.CreateAPIView):
         else:
             print(f"Error: {response.status_code} and {response.json()}")
             return Response({"message": "Code incorrect"}, status=400)
-       
-class UserLoginView(APIView):
+
+@method_decorator(csrf_exempt, name='dispatch')      
+class UserLoginView(generics.CreateAPIView):
     serializer_class = UserLoginSerializer
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
+        try:
+            user = User.objects.get(email=email)
+            if user.is_active == False:
+                raise AuthenticationFailed(detail="User is not verified")
+        except User.DoesNotExist:
+            raise AuthenticationFailed(detail="Invalid email")
+    
         user = authenticate(username=email, password=password)
         if user is None:
-            raise AuthenticationFailed(detail="Invalid email or password")
-        elif not user.is_active:
-            raise AuthenticationFailed(detail="User is not verified")
+            raise AuthenticationFailed(detail="Invalid password")
 
         token, _ = Token.objects.get_or_create(user=user)
 
+        # Log the user in within the session
+        login(request, user)
+
         return Response({"message": "Login successful", "token": token.key}, status=status.HTTP_200_OK)
-    
+
 class UserLogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication,SessionAuthentication]
