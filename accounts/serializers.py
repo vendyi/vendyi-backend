@@ -1,4 +1,4 @@
-# serializers.py
+from .exceptions import ExternalAPIError
 from rest_framework import serializers
 from .models import *
 import requests
@@ -56,10 +56,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         response = requests.post(url, json=data, headers=headers)
 
-        if response.status_code == 200:
-            print(response.json())
-        else:
-            return Response(f"Error: {response.status_code} and {response.json()}")
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code != 200:
+                raise ExternalAPIError(response.status_code, response.json())
+        except requests.RequestException as e:
+            raise ExternalAPIError(500, str(e))
         
         return user
 
