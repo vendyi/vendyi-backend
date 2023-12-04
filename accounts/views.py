@@ -48,7 +48,7 @@ class UserRegistrationView(generics.CreateAPIView):
 class UserOtpVerification(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserOtpVerificationSerializer
-    
+    permission_classes = [AllowAny]
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -87,7 +87,7 @@ class UserOtpVerification(generics.CreateAPIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class UserLoginView(generics.CreateAPIView):
     serializer_class = UserLoginSerializer
-
+    permission_classes = [AllowAny]
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
