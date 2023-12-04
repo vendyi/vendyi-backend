@@ -75,7 +75,6 @@ MIDDLEWARE = [
     # ...
 ]
 
-
 ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
@@ -128,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-#CSRF_TRUSTED_ORIGINS = ['https://vendyi-backend.onrender.com','http://192.168.43.142:8081']
+CSRF_TRUSTED_ORIGINS = ['https://vendyi-92322aa588dc.herokuapp.com']
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -184,8 +183,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        "CONFIG": {
-            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        'CONFIG': {
+            "hosts": [(os.environ.get('REDIS_URL'), 12340)],
         },
     },
 }
@@ -203,4 +202,3 @@ EXPRESSPAY_MERCHANT_ID = os.environ.get('EXPRESSPAY_MERCHANT_ID')
 # settings.py
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 CORS_ALLOW_ALL_ORIGINS = True
-CSRF_COOKIE_SAMESITE = 'None'
