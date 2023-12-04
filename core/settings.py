@@ -30,6 +30,13 @@ REST_AUTH_SERIALIZERS = {
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
     'USER_DETAILS_SERIALIZER': 'accounts.serializers.FullUserSerializer',
 }
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',  # Include TokenAuthentication
+        # ... other authentication classes
+    ),
+    # ... other DRF settings
+}
 
 
 # Application definition
