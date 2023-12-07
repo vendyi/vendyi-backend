@@ -4,10 +4,12 @@ from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
 import os
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework import generics, status
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, logout
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -36,17 +38,23 @@ class UserRegistrationView(generics.CreateAPIView):
     permission_classes = [AllowAny]  # Allow anyone to register
 
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == status.HTTP_201_CREATED:
-            user = User.objects.get(username=request.data['username'])
-            token, _ = Token.objects.get_or_create(user=user)
-            response.data['token'] = token.key
-        return response
-
+        try:
+            response = super().post(request, *args, **kwargs)
+            if response.status_code == status.HTTP_201_CREATED:
+                user = User.objects.get(username=request.data['username'])
+                token, _ = Token.objects.get_or_create(user=user)
+                user_id = user.id
+                response.data['token'] = token.key
+                response.data['user_id'] = user_id
+            return response
+        except ExternalAPIError as e:
+            # Here you can customize the response as per your frontend requirements
+            return Response({"error": str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        
 class UserOtpVerification(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserOtpVerificationSerializer
-    
+    permission_classes = [AllowAny]
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -54,7 +62,7 @@ class UserOtpVerification(generics.CreateAPIView):
         
         code = serializer.validated_data.get('code')
         user_id = serializer.validated_data.get('user_id')
-        phone = serializer.validated_data.get('phone')
+        phone = User.objects.get(pk=user_id).phone_number
         data = {
             "code": code,
             "number": phone,
@@ -81,30 +89,30 @@ class UserOtpVerification(generics.CreateAPIView):
         else:
             print(f"Error: {response.status_code} and {response.json()}")
             return Response({"message": "Code incorrect"}, status=400)
-       
+ 
 class UserLoginView(generics.CreateAPIView):
     serializer_class = UserLoginSerializer
-
+    permission_classes = [AllowAny]
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-
+        
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(email=email)
+            if user.is_active == False:
+                raise AuthenticationFailed(detail="User is not verified")
         except User.DoesNotExist:
-            raise AuthenticationFailed(detail="Invalid username")
-
-        user = authenticate(username=username, password=password)
+            raise AuthenticationFailed(detail="Invalid email")
+    
+        user = authenticate(username=email, password=password)
         if user is None:
             raise AuthenticationFailed(detail="Invalid password")
 
         token, _ = Token.objects.get_or_create(user=user)
-
-        # Log the user in within the session
-        login(request, user)
 
         return Response({"message": "Login successful", "token": token.key}, status=status.HTTP_200_OK)
 
@@ -164,7 +172,7 @@ class UserResendOTP(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        phone = serializer.validated_data.get('phone')
+        phone = User.objects.get(pk=serializer.validated_data.get('user_id')).phone_number
         user_id = serializer.validated_data.get('user_id')
         user = User.objects.get(pk=user_id)
         message = f"Hello {user.username}, Welcome to Vendyi."

@@ -1,5 +1,5 @@
 """
-Django settings for Vendyi Backend Production mode project.
+Django settings for Vendyi Backend Development mode project.
 """
 from pathlib import Path
 import dj_database_url
@@ -29,6 +29,13 @@ REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
     'USER_DETAILS_SERIALIZER': 'accounts.serializers.FullUserSerializer',
+}
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',  # Include TokenAuthentication
+        # ... other authentication classes
+    ),
+    # ... other DRF settings
 }
 
 
@@ -100,8 +107,13 @@ WSGI_APPLICATION = "core.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
+
+DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
 
 
 # Password validation
@@ -122,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://vendyi-92322aa588dc.herokuapp.com']
+CSRF_TRUSTED_ORIGINS = ['https://vendyi-92322aa588dc.herokuapp.com','https://192.168.43.142:8081']
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -196,3 +208,4 @@ EXPRESSPAY_MERCHANT_ID = os.environ.get('EXPRESSPAY_MERCHANT_ID')
 # ... other configuration as needed
 # settings.py
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+CORS_ALLOW_ALL_ORIGINS = True
