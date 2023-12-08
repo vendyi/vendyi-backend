@@ -37,14 +37,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(user.password)
         user.is_active = False
         user.save()
-        message = f"Hello {user.username}, Welcome to Dreamosoft."
+        message = f"Hello {user.username}, Welcome to Vendyi."
         data = {
         'expiry': 5,
         'length': 6,
         'medium': 'sms',
         'message': message+' This is your verification code:\n%otp_code%\nPlease do not share this code with anyone.',
         'number': user.phone_number,
-        'sender_id': 'Drmosft',
+        'sender_id': 'Vendyi',
         'type': 'numeric',
         }
 
@@ -57,7 +57,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         try:
             response = requests.post(url, json=data, headers=headers)
             if response.status_code != 200:
+                user.delete()
                 raise ExternalAPIError(response.status_code, response.json())
+                
         except requests.RequestException as e:
             user.delete()
             raise ExternalAPIError(500, str(e))
