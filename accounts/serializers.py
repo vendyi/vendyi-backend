@@ -86,3 +86,7 @@ class VerifyUserPinSerializer(serializers.Serializer):
 class UserOtpVerificationSerializer(serializers.Serializer):
     code = serializers.CharField()
     user_id = serializers.CharField()
+
+class UserChangePinSerializer(serializers.Serializer):
+    pin = serializers.CharField(max_length=5)
+    old_pin = serializers.CharField(max_length=5)

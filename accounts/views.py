@@ -4,8 +4,7 @@ from rest_framework.authtoken.models import Token
 from .serializers import *
 from .models import User
 import os
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication,SessionAuthentication
 from rest_framework import generics, status
@@ -215,3 +214,28 @@ class VerifyUserPinView(generics.CreateAPIView):
             return Response({"message": "Pin is correct"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Pin is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserChangePinView(generics.CreateAPIView):
+    serializer_class = UserChangePinSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        pin = serializer.validated_data['pin']
+        old_pin = serializer.validated_data['old_pin']
+        if request.user.pin != old_pin:
+            return Response({"message": "Old pin is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            request.user.pin = pin
+            request.user.save()
+        return Response({"message": "Pin changed successfully"}, status=status.HTTP_200_OK)
+
+class CheckUserPhoneView(APIView):
+    permission_classes=[SessionAuthentication, TokenAuthentication]
+    def get(self, request, *args, **kwargs):
+        if request.user.phone_number:
+            return Response({"message": "Phone number already exists"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Phone number does not exist"}, status=status.HTTP_404_NOT_FOUND)
