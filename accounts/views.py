@@ -232,7 +232,7 @@ class UserChangePinView(generics.CreateAPIView):
             request.user.save()
         return Response({"message": "Pin changed successfully"}, status=status.HTTP_200_OK)
 
-class CheckUserPhoneView(APIView):
+class CheckUserPhoneView(generics.CreateAPIView):
     permission_classes=[SessionAuthentication, TokenAuthentication]
     def get(self, request, *args, **kwargs):
         if request.user.phone_number:
