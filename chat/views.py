@@ -32,9 +32,9 @@ class ChatMessagesCreateView(generics.CreateAPIView):
             chat_room.save()
 
         reply_to_id = self.request.data.get('reply_to')  # Get the id of the message to reply to
-        if type(reply_to_id) == int:
+        try:
             reply_to = Message.objects.get(id=reply_to_id)  # Get the message to reply to
-        else:
+        except Message.DoesNotExist:
             reply_to = None
 
         serializer.save(sender=self.request.user, chat_room=chat_room, reply_to=reply_to)
