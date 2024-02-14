@@ -74,7 +74,7 @@ class UserOtpVerification(generics.CreateAPIView):
         url = 'https://sms.arkesel.com/api/otp/verify'
 
         response = requests.post(url, json=data, headers=headers)
-
+        print(response.json())
         if response.status_code == 200 and response.json().get("message") == "Successful":
             print(response.json())
             user = User.objects.get(pk=user_id)
@@ -193,7 +193,7 @@ class UserResendOTP(generics.CreateAPIView):
 
         response = requests.post(url, json=data, headers=headers)
 
-        if response.status_code == 200 and response.json().get("code") == 1000:
+        if response.status_code == 200 and response.json().get("code") == '1000':
             print(response.json())
             return Response({"message": "OTP sent"}, status=200)
         else:
